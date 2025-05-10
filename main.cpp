@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <d3d12.h>
 #include <dbghelp.h>
+#include <dxcapi.h>
 #include <dxgi1_6.h>
 #include <dxgidebug.h>
 #include <filesystem>
@@ -16,6 +17,7 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "dxcompiler.lib")
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
 
@@ -50,9 +52,39 @@ void Log(std::ostream &os, const std::string &message) {
   OutputDebugStringA(message.c_str());
 }
 
-std::wstring ConvertString(const std::string &str) { return std::wstring(); }
+std::wstring ConvertString(const std::string &str) {
+  if (str.empty()) {
+    return std::wstring();
+  }
 
-std::string ConvertString(const std::wstring &str) { return std::string(); }
+  auto sizeNeeded =
+      MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char *>(&str[0]),
+                          static_cast<int>(str.size()), NULL, 0);
+  if (sizeNeeded == 0) {
+    return std::wstring();
+  }
+  std::wstring result(sizeNeeded, 0);
+  MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char *>(&str[0]),
+                      static_cast<int>(str.size()), &result[0], sizeNeeded);
+  return result;
+}
+
+std::string ConvertString(const std::wstring &str) {
+  if (str.empty()) {
+    return std::string();
+  }
+
+  auto sizeNeeded =
+      WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()),
+                          NULL, 0, NULL, NULL);
+  if (sizeNeeded == 0) {
+    return std::string();
+  }
+  std::string result(sizeNeeded, 0);
+  WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()),
+                      result.data(), sizeNeeded, NULL, NULL);
+  return result;
+}
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -69,6 +101,33 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
   return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
+// IDxcBlob* CompileShader(
+// 	// CompilerするShaderファイルへのパス
+// 	const std::wstring& filePath,
+// 	// Compilerに使用するProfile
+// 	const wchar_t* profile,
+// 	// 初期化で生成したものを3つ
+// 	IDxcUtils* dxcUtils,
+// 	IDxcCompiler3* dxcCompiler,
+// 	IDxcIncludeHandler* includeHandler)
+// {
+// 	// これからシェーダーをコンパイルする旨をログに出す
+// 	Log(ConvertString(std::format(L"Begin CompileShader, path:{},
+// profile:{}\n", filePath, profile)));
+// 	// hlslファイルを読む
+// 	IDxcBlobEncoding* shaderSource = nullptr;
+// 	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr,
+// &shaderSource);
+// 	// 読めなかったら止める
+// 	assert(SUCCEEDED(hr));
+// 	// 読み込んだファイルの内容を設定する
+// 	DxcBuffer shaderSourceBuffer;
+// 	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+// 	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+// 	shaderSourceBuffer.Encoding = DXC_CP_UTF8; //
+// UTF8の文字コードであることを通知
+// }
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -77,6 +136,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // log出力用のフォルダ「logs」を作成
   std::filesystem::create_directory("logs");
 
+  // ここからファイルを作成し、of
   // 現在時刻を取得
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   // ログファイルの名前にコンマ何秒はいらないので、削って秒にする
@@ -142,6 +202,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   // 出力ウィンドウへの文字出力
   Log(logStream, "Hello,DirectX!\n");
+  Log(logStream, ConvertString(std::format(L"clintSize:{},{}\n", kClientWidth,
+                                           kClientHeight)));
 
   // DXGIファクトリーの作成
   IDXGIFactory7 *dxgiFactory = nullptr;
@@ -322,6 +384,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
   assert(fenceEvent != nullptr);
 
+  // // dxcCompilerを初期化
+  // IDxcUtils *dxcUtils = nullptr;
+  // IDxcCompiler3 *dxcCompiler = nullptr;
+  // hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
+  // assert(SUCCEEDED(hr));
+  // hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
+  // assert(SUCCEEDED(hr));
+  // 
+  // // 現時点でincludeはしないが、includeに対応するための設定を行っておく
+  // IDxcIncludeHandler *includeHandler = nullptr;
+  // hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
+  // assert(SUCCEEDED(hr));
+
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
   while (msg.message != WM_QUIT) {
@@ -330,7 +405,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     } else {
-      // ゲーム処理
+      // ゲーム処理d
 
       // これから書き込むバックバッファのインデックスを取得
       UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
@@ -357,6 +432,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       float clearColor[] = {0.1f, 0.25f, 0.5f, 1.0f}; // 青っぽい色。RGBAの順
       commandList->ClearRenderTargetView(rtvHandles[backBufferIndex],
                                          clearColor, 0, nullptr);
+      // コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
 
       // 今回はRenderTargetからPresentにする
       barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -364,7 +440,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // TransitionBarrierを張る
       commandList->ResourceBarrier(1, &barrier);
 
-      // コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
       hr = commandList->Close();
       assert(SUCCEEDED(hr));
 
