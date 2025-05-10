@@ -1,5 +1,13 @@
 #include <Windows.h>
 #include <cstdint>
+#include <format>
+#include <string>
+
+void Log(const std::string &message) { OutputDebugStringA(message.c_str()); }
+
+std::wstring ConvertString(const std::string &str) { return std::wstring(); }
+
+std::string ConvertString(const std::wstring &str) { return std::string(); }
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -59,7 +67,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   ShowWindow(hwnd, SW_SHOW);
 
   // 出力ウィンドウへの文字出力
-  OutputDebugStringA("Hello,DirectX!\n");
+  Log("Hello,DirectX!\n");
 
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
