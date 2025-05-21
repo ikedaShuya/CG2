@@ -1104,6 +1104,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                       srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
                       srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
+  float color[3] = {1.0f, 0.0f, 0.0f};
+
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
   while (msg.message != WM_QUIT) {
@@ -1119,7 +1121,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::NewFrame();
 
       // 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
-      ImGui::ShowDemoWindow();
+      // mGui::ShowDemoWindow();
+
+      ImGui::Begin("Window");
+      ImGui::ColorEdit3("color", color);
+      *materialData = Vector4(color[0], color[1], color[2], 0.0f);
+      ImGui::End();
 
       transform.rotate.y += 0.03f;
 
