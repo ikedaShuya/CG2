@@ -1,3 +1,4 @@
+#include "externals/DirectXTex/DirectXTex.h"
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
@@ -27,6 +28,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd,
                                                              WPARAM wparam,
                                                              LPARAM lparam);
 
+struct Vector2 {
+  float x;
+  float y;
+};
+
 struct Vector3 {
   float x;
   float y;
@@ -42,6 +48,11 @@ struct Vector4 {
 
 struct Matrix4x4 {
   float m[4][4];
+};
+
+struct VertexData {
+  Vector4 position;
+  Vector2 texcoord;
 };
 
 // 単位行列
@@ -648,8 +659,84 @@ ID3D12DescriptorHeap *CreateDescriptorHeap(ID3D12Device *device,
   return descriptorHeap;
 }
 
+DirectX::ScratchImage LoadTexture(const std::string &filePath) {
+  // テクスチャファイルを呼んでプログラムで扱えるようにする
+  DirectX::ScratchImage image{};
+  std::wstring filePathW = ConvertString(filePath);
+  HRESULT hr = DirectX::LoadFromWICFile(
+      filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+  assert(SUCCEEDED(hr));
+
+  // ミップマップの生成
+  DirectX::ScratchImage mipImages{};
+  hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(),
+                                image.GetMetadata(), DirectX::TEX_FILTER_SRGB,
+                                0, mipImages);
+  assert(SUCCEEDED(hr));
+
+  // ミップマップ付きのデータを返す
+  return mipImages;
+}
+
+ID3D12Resource *CreateTextureResource(ID3D12Device *device,
+                                      const DirectX::TexMetadata &metadata) {
+  // metadataを基にResourceの設定
+  D3D12_RESOURCE_DESC resourceDesc{};
+  resourceDesc.Width = UINT(metadata.width);           // Textureの幅
+  resourceDesc.Height = UINT(metadata.height);         // Textureの高さ
+  resourceDesc.MipLevels = UINT16(metadata.mipLevels); // mipmapの数
+  resourceDesc.DepthOrArraySize =
+      UINT16(metadata.arraySize);        // 奥行 or 配置Textureの配列数
+  resourceDesc.Format = metadata.format; // TextureのFormat
+  resourceDesc.SampleDesc.Count = 1;     // サンプリングカウント。1固定。
+  resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(
+      metadata.dimension); // Textureの次元数。普段使っているのは2次元
+
+  // 利用するHeapの設定。非常に特殊な運用。02_04exで一般的なケース版がある
+  D3D12_HEAP_PROPERTIES heapProperties{};
+  heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM; // 細かい設定を行う
+  heapProperties.CPUPageProperty =
+      D3D12_CPU_PAGE_PROPERTY_WRITE_BACK; // WriteBackポリシーでCPUアクセス可能
+  heapProperties.MemoryPoolPreference =
+      D3D12_MEMORY_POOL_L0; // プロセッサの近くに配置
+
+  // Resourceの生成
+  ID3D12Resource *resource = nullptr;
+  HRESULT hr = device->CreateCommittedResource(
+      &heapProperties,                   // Heapの設定
+      D3D12_HEAP_FLAG_NONE,              // Heapの特殊な設定。特になし。
+      &resourceDesc,                     // Resourceの設定
+      D3D12_RESOURCE_STATE_GENERIC_READ, // 初回のResourceState。Textureは基本読むだけ
+      nullptr,                           // Clear最適値。使わないのでnullptr
+      IID_PPV_ARGS(&resource));
+  assert(SUCCEEDED(hr));
+  return resource;
+}
+
+void UploadTextureData(ID3D12Resource *texture,
+                       const DirectX::ScratchImage &mipImages) {
+  // Meta情報を取得
+  const DirectX::TexMetadata &metadata = mipImages.GetMetadata();
+  // 全MipMapについて
+  for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; ++mipLevel) {
+    // MipMapLevelを指定して各Imageを取得
+    const DirectX::Image *img = mipImages.GetImage(mipLevel, 0, 0);
+    // Textureに転送
+    HRESULT hr =
+        texture->WriteToSubresource(UINT(mipLevel),
+                                    nullptr,              // 全領域へコピー
+                                    img->pixels,          // 元データアドレス
+                                    UINT(img->rowPitch),  // 1ラインサイズ
+                                    UINT(img->slicePitch) // 1枚サイズ
+        );
+    assert(SUCCEEDED(hr));
+  }
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+
+  CoInitializeEx(0, COINIT_MULTITHREADED);
 
   SetUnhandledExceptionFilter(ExportDump);
 
@@ -854,17 +941,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   ID3D12DescriptorHeap *rtvDescriptorHeap =
       CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 
-  // ID3D12DescriptorHeap *rtvDescriptorHeap = nullptr;
-  // D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
-  // rtvDescriptorHeapDesc.Type =
-  //     D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // レンダーターゲットビュー用
-  // rtvDescriptorHeapDesc.NumDescriptors =
-  //     2; // ダブルバッファように2つ。多くても別に構わない
-  // hr = device->CreateDescriptorHeap(&rtvDescriptorHeapDesc,
-  //                                   IID_PPV_ARGS(&rtvDescriptorHeap));
-  // // ディスクリプタヒープが作れなかったので起動できない
-  // assert(SUCCEEDED(hr));
-
   ID3D12DescriptorHeap *srvDescriptorHeap = CreateDescriptorHeap(
       device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
@@ -961,11 +1037,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   assert(SUCCEEDED(hr));
 
   // InputLayout
-  D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
   inputElementDescs[0].SemanticName = "POSITION";
   inputElementDescs[0].SemanticIndex = 0;
   inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
   inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+  inputElementDescs[1].SemanticName = "TEXCOORD";
+  inputElementDescs[1].SemanticIndex = 0;
+  inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+  inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
   D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
   inputLayoutDesc.pInputElementDescs = inputElementDescs;
   inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -1063,15 +1143,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexBufferView.StrideInBytes = sizeof(Vector4);
 
   // 頂点リソースにデータを書き込む
-  Vector4 *vertexData = nullptr;
+  VertexData *vertexData = nullptr;
   // 書き込むためのアドレスを取得
   vertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
   // 左下
-  vertexData[0] = {-0.5f, -0.5f, 0.0f, 1.0f};
+  vertexData[0].position = {-0.5f, -0.5f, 0.0f, 1.0f};
+  vertexData[0].texcoord = {0.0f, 1.0f};
   // 上
-  vertexData[1] = {0.0f, 0.5f, 0.0f, 1.0f};
+  vertexData[1].position = {0.0f, 0.5f, 0.0f, 1.0f};
+  vertexData[1].texcoord = {0.5f, 0.0f};
   // 右下
-  vertexData[2] = {0.5f, -0.5f, 0.0f, 1.0f};
+  vertexData[2].position = {0.5f, -0.5f, 0.0f, 1.0f};
+  vertexData[2].texcoord = {1.0f, 1.0f};
 
   // ビューポート
   D3D12_VIEWPORT viewport{};
@@ -1106,6 +1189,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   float color[3] = {1.0f, 0.0f, 0.0f};
 
+  // Textureを呼んで転送する
+  DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
+  const DirectX::TexMetadata &metadata = mipImages.GetMetadata();
+  ID3D12Resource *textureResource = CreateTextureResource(device, metadata);
+  UploadTextureData(textureResource, mipImages);
+
+  // metaDataを基にSRVの設定
+  D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+  srvDesc.Format = metadata.format;
+  srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+  srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // 2Dテクスチャ
+  srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
+
+  // SRVを作成するDescriptorHeapの場所を決める
+  D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU =
+      srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+  D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU =
+      srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+  // 先頭はImGuiが使っているのでその次を使う
+  textureSrvHandleCPU.ptr += device->GetDescriptorHandleIncrementSize(
+      D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+  textureSrvHandleGPU.ptr += device->GetDescriptorHandleIncrementSize(
+      D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+  // SRVの生成
+  device->CreateShaderResourceView(textureResource, &srvDesc,
+                                   textureSrvHandleCPU);
+
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
   while (msg.message != WM_QUIT) {
@@ -1121,14 +1231,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::NewFrame();
 
       // 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
-      // mGui::ShowDemoWindow();
+      // ImGui::ShowDemoWindow();
 
       ImGui::Begin("Window");
-      ImGui::ColorEdit3("color", color);
-      *materialData = Vector4(color[0], color[1], color[2], 0.0f);
+      ImGui::ColorEdit3("color", &(*materialData).x);
       ImGui::End();
 
-      transform.rotate.y += 0.03f;
+      transform.rotate.y += 0.01f;
 
       Matrix4x4 worldMatrix = MakeAffineMatrix(
           transform.scale, transform.rotate, transform.translate);
@@ -1145,14 +1254,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 
       Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(
-          1.0471976f, float(kClientWidth) / float(kClientHeight), 0.1f,
-          1000.0f);
+          0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 
       Matrix4x4 worldViewProjectionMatrix =
           Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 
       *transformationMatrixData = worldViewProjectionMatrix;
 
+      // ImGuiの内部コマンドを生成する
+      ImGui::Render();
       // これから書き込むバックバッファのインデックスを取得
       UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -1182,9 +1292,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // 描画用のDescriptorHeapの設定
       ID3D12DescriptorHeap *descriptorHeaps[] = {srvDescriptorHeap};
       commandList->SetDescriptorHeaps(1, descriptorHeaps);
-
-      // ImGuiの内部コマンドを生成する
-      ImGui::Render();
 
       commandList->RSSetViewports(1, &viewport);       // Viewportを設定
       commandList->RSSetScissorRects(1, &scissorRect); // Scirssorを設定
@@ -1286,6 +1393,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   ImGui_ImplWin32_Shutdown();
   ImGui::DestroyContext();
 
+  textureResource->Release();
+
   // リソースリークチェック
   IDXGIDebug1 *debug;
   if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
@@ -1294,6 +1403,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
     debug->Release();
   }
+
+  CoUninitialize();
 
   return 0;
 }
