@@ -1101,7 +1101,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   assert(SUCCEEDED(hr));
 
   ID3D12Resource *vertexResource =
-      CreateBufferResource(device, sizeof(Vector4) * 3);
+      CreateBufferResource(device, sizeof(VertexData) * 3);
 
   // マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
   ID3D12Resource *materialResource =
@@ -1138,9 +1138,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // リソースの先頭のアドレスから使う
   vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点3つ分のサイズ
-  vertexBufferView.SizeInBytes = sizeof(Vector4) * 3;
+  vertexBufferView.SizeInBytes = sizeof(VertexData) * 3;
   // 1頂点あたりのサイズ
-  vertexBufferView.StrideInBytes = sizeof(Vector4);
+  vertexBufferView.StrideInBytes = sizeof(VertexData);
 
   // 頂点リソースにデータを書き込む
   VertexData *vertexData = nullptr;
