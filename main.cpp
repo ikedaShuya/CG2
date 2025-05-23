@@ -1121,7 +1121,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       ImGui::NewFrame();
 
       // 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
-      // mGui::ShowDemoWindow();
+      ImGui::ShowDemoWindow();
 
       ImGui::Begin("Window");
       ImGui::ColorEdit3("color", color);
