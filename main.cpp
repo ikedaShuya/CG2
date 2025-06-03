@@ -777,13 +777,13 @@ ID3D12Resource *CreateDepthStencilTextureResource(ID3D12Device *device,
       &resourceDesc,                    // Resourceの設定
       D3D12_RESOURCE_STATE_DEPTH_WRITE, // 深度値を書き込む状態にしておく
       &depthClearValue,                 // Clear最適地
-      IID_PPV_ARGS(&resource));
+      IID_PPV_ARGS(&resource));         // 作成するResourceへのポインタ
   assert(SUCCEEDED(hr));
   return resource;
 }
 
 // bool DepthFunc(float currZ, float prevZ) { return currZ <= prevZ; }
-// 
+//
 // bool DepthFunc(float currZ, float prevZ) { return currZ >= prevZ; }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -997,9 +997,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   ID3D12DescriptorHeap *srvDescriptorHeap = CreateDescriptorHeap(
       device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
-  // DSV用のヒープでディスクリプタの数を1。DSVはShader内で触るものではないので、ShaderVisibleはfalse
-  ID3D12DescriptorHeap *dsvDescriptorHeap =
-      CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+ 
 
   // SwapChainからResourceを引っ張てくる
   ID3D12Resource *swapChainResources[2] = {nullptr};
@@ -1149,7 +1147,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // RasiterzerStateの設定
   D3D12_RASTERIZER_DESC rasterizerDesc{};
   // 裏面（時計回り）を表示しない
-  rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+  // rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+  rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
   // 三角形の中を塗りつぶす
   rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
@@ -1321,9 +1320,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   ID3D12Resource *depthStencilResource =
       CreateDepthStencilTextureResource(device, kClientWidth, kClientHeight);
 
+   // DSV用のヒープでディスクリプタの数を1。DSVはShader内で触るものではないので、ShaderVisibleはfalse
+  ID3D12DescriptorHeap *dsvDescriptorHeap =
+      CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+
   // DSVの設定
   D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-  dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // Format。基本的にResourceに合わせる
+  dsvDesc.Format =
+      DXGI_FORMAT_D24_UNORM_S8_UINT; // Format。基本的にResourceに合わせる
   dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D; // 2dTexture
   // DSVHeapの先頭にDSVをつくる
   device->CreateDepthStencilView(
