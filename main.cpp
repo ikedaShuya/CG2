@@ -782,6 +782,35 @@ ID3D12Resource *CreateDepthStencilTextureResource(ID3D12Device *device,
   return resource;
 }
 
+// 正射影行列
+Matrix4x4 MakeOrthographicMatrix(float left, float top, float right,
+                                 float bottom, float nearClip, float farClip) {
+
+  Matrix4x4 result{};
+
+  result.m[0][0] = 2.0f / (right - left);
+  result.m[0][1] = 0.0f;
+  result.m[0][2] = 0.0f;
+  result.m[0][3] = 0.0f;
+
+  result.m[1][0] = 0.0f;
+  result.m[1][1] = 2.0f / (top - bottom);
+  result.m[1][2] = 0.0f;
+  result.m[1][3] = 0.0f;
+
+  result.m[2][0] = 0.0f;
+  result.m[2][1] = 0.0f;
+  result.m[2][2] = 1.0f / (farClip - nearClip);
+  result.m[2][3] = 0.0f;
+
+  result.m[3][0] = (left + right) / (left - right);
+  result.m[3][1] = (top + bottom) / (bottom - top);
+  result.m[3][2] = nearClip / (nearClip - farClip);
+  result.m[3][3] = 1.0f;
+
+  return result;
+}
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -1229,6 +1258,60 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   *transformationMatrixData = MakeIdentity4x4();
 
+  // Sprite用の頂点リソースを作る
+  ID3D12Resource *vertexResourceSprite =
+      CreateBufferResource(device, sizeof(VertexData) * 6);
+
+  // 頂点バッファビューを作成する
+  D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
+  // リソースの先頭のアドレスから使う
+  vertexBufferViewSprite.BufferLocation =
+      vertexResourceSprite->GetGPUVirtualAddress();
+  // 使用するリソースのサイズは頂点6つ分のサイズ
+  vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 6;
+  // 1頂点あたりのサイズ
+  vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
+
+  VertexData *vertexDataSprite = nullptr;
+  vertexResourceSprite->Map(0, nullptr,
+                            reinterpret_cast<void **>(&vertexDataSprite));
+
+  // 1枚目の三角形
+  vertexDataSprite[0].position = {0.0f, 360.0f, 0.0f, 1.0f}; // 左下
+  vertexDataSprite[0].texcoord = {0.0f, 1.0f};
+  vertexDataSprite[1].position = {0.0f, 0.0f, 0.0f, 1.0f}; // 左上
+  vertexDataSprite[1].texcoord = {0.0f, 0.0f};
+  vertexDataSprite[2].position = {640.0f, 360.0f, 0.0f, 1.0f}; // 右下
+  vertexDataSprite[2].texcoord = {1.0f, 1.0f};
+
+  // 2枚目の三角形
+  vertexDataSprite[3].position = {0.0f, 0.0f, 0.0f, 1.0f}; // 左上
+  vertexDataSprite[3].texcoord = {0.0f, 0.0f};
+  vertexDataSprite[4].position = {640.0f, 0.0f, 0.0f, 1.0f}; // 右上
+  vertexDataSprite[4].texcoord = {1.0f, 0.0f};
+  vertexDataSprite[5].position = {640.0f, 360.0f, 0.0f, 1.0f}; // 右下
+  vertexDataSprite[5].texcoord = {1.0f, 1.0f};
+
+  // Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4
+  // 1つ分のサイズを用意する
+  ID3D12Resource *transformationMatrixResourceSprite =
+      CreateBufferResource(device, sizeof(Matrix4x4));
+  // データを書き込む
+  Matrix4x4 *transformationMatrixDataSprite = nullptr;
+  // 書き込むためのアドレスを取得
+  transformationMatrixResourceSprite->Map(
+      0, nullptr, reinterpret_cast<void **>(&transformationMatrixDataSprite));
+  // 単位行列を書き込んでおく
+  *transformationMatrixDataSprite = MakeIdentity4x4();
+
+  Transform transformSprite{{1.0f, 1.0f, 1.0f},
+                            {
+                                0.0f,
+                                0.0f,
+                                0.0f,
+                            },
+                            {0.0f, 0.0f, 0.0f}};
+
   // 頂点バッファビューを作成する
   D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
   // リソースの先頭のアドレスから使う
@@ -1292,8 +1375,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                       srvDescriptorHeap,
                       srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
                       srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
-  float color[3] = {0.0f, 0.0f, 0.0f};
 
   // Textureを呼んで転送する
   DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
@@ -1361,9 +1442,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
       // ImGui::ShowDemoWindow();
 
-      // ImGui::Begin("Window");
-      // ImGui::ColorEdit3("color", &(*materialData).x);
-      // ImGui::End();
+      ImGui::Begin("Window");
+      ImGui::ColorEdit3("color", &(*materialData).x);
+      ImGui::SliderFloat3("translateSprite", &transformSprite.translate.x, 0.0f, 600.0f);
+      ImGui::End();
 
       transform.rotate.y += 0.009f;
 
@@ -1387,6 +1469,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
           Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 
       *wvpData = worldViewProjectionMatrix;
+
+      // Sprite用のWorldViewProjectionMatrixを作る
+      Matrix4x4 worldMatrixSprite =
+          MakeAffineMatrix(transformSprite.scale, transformSprite.rotate,
+                           transformSprite.translate);
+      Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+      Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(
+          0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
+      Matrix4x4 worldViewProjectionMatrixSprite =
+          Multiply(worldMatrixSprite,
+                   Multiply(viewMatrixSprite, projectionMatrixSprite));
+
+      *transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
 
       // ImGuiの内部コマンドを生成する
       ImGui::Render();
@@ -1454,6 +1549,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
       // 描画！（DrawCall/ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
+      commandList->DrawInstanced(6, 1, 0, 0);
+
+      // Spriteの描画。変更が必要なものだけ変更する
+      commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // WBVを設定
+      // TransformationMatirxCBufferの場所を設定
+      commandList->SetGraphicsRootConstantBufferView(
+          1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+      // 描画！（DrawCall/ドローコール)
       commandList->DrawInstanced(6, 1, 0, 0);
 
       // 実際のcommandListのImGuiの描画コマンドを積む
@@ -1543,6 +1646,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   depthStencilResource->Release();
 
   dsvDescriptorHeap->Release();
+
+  vertexResourceSprite->Release();
+
+  transformationMatrixResourceSprite->Release();
 
   CoUninitialize();
 
