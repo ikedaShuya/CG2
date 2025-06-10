@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <numbers>
 #include <string>
 #include <strsafe.h>
 #include <vector>
@@ -1304,6 +1305,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 単位行列を書き込んでおく
   *transformationMatrixDataSprite = MakeIdentity4x4();
 
+  uint32_t kSubdivision = 16;
+  uint32_t sphereVertexNum = kSubdivision * kSubdivision * 6;
+
   Transform transformSprite{{1.0f, 1.0f, 1.0f},
                             {
                                 0.0f,
@@ -1312,14 +1316,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                             },
                             {0.0f, 0.0f, 0.0f}};
 
+  // Sphere用の頂点リソースを作る
+  // 1つ分のサイズを用意する
+  ID3D12Resource *transformationMatrixResourceSphere =
+      CreateBufferResource(device, sizeof(Matrix4x4));
+  // データを書き込む
+  Matrix4x4 *transformationMatrixDataSphere = nullptr;
+  // 書き込むためのアドレスを取得
+  transformationMatrixResourceSphere->Map(
+      0, nullptr, reinterpret_cast<void **>(&transformationMatrixDataSphere));
+
   // 頂点バッファビューを作成する
   D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-  // リソースの先頭のアドレスから使う
-  vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-  // 使用するリソースのサイズは頂点6つ分のサイズ
-  vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
-  // 1頂点あたりのサイズ
-  vertexBufferView.StrideInBytes = sizeof(VertexData);
 
   // 頂点リソースにデータを書き込む
   VertexData *vertexData = nullptr;
@@ -1425,6 +1433,85 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   Transform cameraTransform{
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f}};
 
+#pragma region
+  // Shere用の頂点リソースを作る
+  ID3D12Resource *vertexResourceShere =
+      CreateBufferResource(device, sizeof(VertexData) * 6);
+
+  // 頂点バッファビューを作成する
+  D3D12_VERTEX_BUFFER_VIEW vertexBufferViewShere{};
+  // リソースの先頭のアドレスから使う
+  vertexBufferViewShere.BufferLocation =
+      vertexResourceShere->GetGPUVirtualAddress();
+  // 使用するリソースのサイズは頂点6つ分のサイズ
+  vertexBufferViewShere.SizeInBytes = sizeof(VertexData) * 6;
+  // 1頂点あたりのサイズ
+  vertexBufferViewShere.StrideInBytes = sizeof(VertexData);
+
+  VertexData *vertexDataShere = nullptr;
+  vertexResourceShere->Map(0, nullptr,
+                           reinterpret_cast<void **>(&vertexDataShere));
+
+  const float kLonEvery =
+      std::numbers::pi_v<float> * 2.0f / float(kSubdivision);
+
+  const float kLatEvery = std::numbers::pi_v<float> / float(kSubdivision);
+
+  for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+    float lat = -std::numbers::pi_v<float> / 2.0f + kLatEvery * latIndex;
+    for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+
+      float lon = lonIndex * kLonEvery;
+
+      VertexData vertA = {{std::cosf(lat) * std::cosf(lon), std::sinf(lat),
+                           std::cosf(lat) * std::sinf(lon), 1.0f},
+                          {float(lonIndex) / float(kSubdivision),
+                           1.0f - float(latIndex) / float(kSubdivision)}};
+
+      VertexData vertB = {
+          {std::cosf(lat + kLatEvery) * std::cosf(lon),
+           std::sinf(lat + kLatEvery),
+           std::cosf(lat + kLatEvery) * std::sinf(lon), 1.0f},
+          {float(lonIndex) / float(kSubdivision),
+           1.0f - float(latIndex + 1.0f) / float(kSubdivision)}};
+
+      VertexData vertC = {{std::cosf(lat) * std::cosf(lon + kLonEvery),
+                           std::sinf(lat),
+                           std::cosf(lat) * std::sinf(lon + kLonEvery), 1.0f},
+                          {float(lonIndex + 1.0f) / float(kSubdivision),
+                           1.0f - float(latIndex) / float(kSubdivision)}};
+
+      VertexData vertD = {
+          {std::cosf(lat + kLatEvery) * std::cosf(lon + kLonEvery),
+           std::sinf(lat + kLatEvery),
+           std::cosf(lat + kLatEvery) * std::sinf(lon + kLonEvery), 1.0f},
+          {float(lonIndex + 1.0f) / float(kSubdivision),
+           1.0f - float(latIndex + 1.0f) / float(kSubdivision)}};
+
+      uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+      vertexDataShere[start + 0] = vertA;
+      vertexDataShere[start + 1] = vertB;
+      vertexDataShere[start + 2] = vertC;
+
+      vertexDataShere[start + 3] = vertC;
+      vertexDataShere[start + 4] = vertB;
+      vertexDataShere[start + 5] = vertD;
+    };
+  };
+
+  // Shere用のTransformationMatrix用のリソースを作る。Matrix4x4
+  // 1つ分のサイズを用意する
+  ID3D12Resource *transformationMatrixResourceShere =
+      CreateBufferResource(device, sizeof(Matrix4x4));
+  // データを書き込む
+  Matrix4x4 *transformationMatrixDataShere = nullptr;
+  // 書き込むためのアドレスを取得
+  transformationMatrixResourceShere->Map(
+      0, nullptr, reinterpret_cast<void **>(&transformationMatrixDataShere));
+  // 単位行列を書き込んでおく
+  *transformationMatrixDataShere = MakeIdentity4x4();
+#pragma endregion
+
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
   while (msg.message != WM_QUIT) {
@@ -1444,7 +1531,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
       ImGui::Begin("Window");
       ImGui::ColorEdit3("color", &(*materialData).x);
-      ImGui::SliderFloat3("translateSprite", &transformSprite.translate.x, 0.0f, 600.0f);
+      ImGui::SliderFloat3("translateSprite", &transformSprite.translate.x, 0.0f,
+                          600.0f);
       ImGui::End();
 
       transform.rotate.y += 0.009f;
@@ -1552,10 +1640,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->DrawInstanced(6, 1, 0, 0);
 
       // Spriteの描画。変更が必要なものだけ変更する
-      commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // WBVを設定
+      commandList->IASetVertexBuffers(0, 1,
+                                      &vertexBufferViewSprite); // WBVを設定
       // TransformationMatirxCBufferの場所を設定
       commandList->SetGraphicsRootConstantBufferView(
           1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+      // 描画！（DrawCall/ドローコール)
+      commandList->DrawInstanced(6, 1, 0, 0);
+
+      // Sphereの描画。変更が必要なものだけ変更する
+      commandList->IASetVertexBuffers(0, 1,
+                                      &vertexBufferViewShere); // WBVを設定
+      // TransformationMatirxCBufferの場所を設定
+      commandList->SetGraphicsRootConstantBufferView(
+          1, transformationMatrixResourceShere->GetGPUVirtualAddress());
       // 描画！（DrawCall/ドローコール)
       commandList->DrawInstanced(6, 1, 0, 0);
 
@@ -1650,6 +1748,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexResourceSprite->Release();
 
   transformationMatrixResourceSprite->Release();
+
+  vertexResourceShere->Release();
+
+  transformationMatrixResourceShere->Release();
 
   CoUninitialize();
 
