@@ -1305,9 +1305,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 単位行列を書き込んでおく
   *transformationMatrixDataSprite = MakeIdentity4x4();
 
-  uint32_t kSubdivision = 16;
-  uint32_t sphereVertexNum = kSubdivision * kSubdivision * 6;
-
   Transform transformSprite{{1.0f, 1.0f, 1.0f},
                             {
                                 0.0f,
@@ -1315,16 +1312,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                                 0.0f,
                             },
                             {0.0f, 0.0f, 0.0f}};
-
-  // Sphere用の頂点リソースを作る
-  // 1つ分のサイズを用意する
-  ID3D12Resource *transformationMatrixResourceSphere =
-      CreateBufferResource(device, sizeof(Matrix4x4));
-  // データを書き込む
-  Matrix4x4 *transformationMatrixDataSphere = nullptr;
-  // 書き込むためのアドレスを取得
-  transformationMatrixResourceSphere->Map(
-      0, nullptr, reinterpret_cast<void **>(&transformationMatrixDataSphere));
 
   // 頂点バッファビューを作成する
   D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
@@ -1431,12 +1418,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
   Transform cameraTransform{
-      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f}};
+      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f}};
+
+  uint32_t kSubdivision = 16;
+  uint32_t sphereVertexNum = kSubdivision * kSubdivision * 6;
 
 #pragma region
   // Shere用の頂点リソースを作る
   ID3D12Resource *vertexResourceShere =
-      CreateBufferResource(device, sizeof(VertexData) * 6);
+      CreateBufferResource(device, sizeof(VertexData) * sphereVertexNum);
 
   // 頂点バッファビューを作成する
   D3D12_VERTEX_BUFFER_VIEW vertexBufferViewShere{};
@@ -1444,7 +1434,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   vertexBufferViewShere.BufferLocation =
       vertexResourceShere->GetGPUVirtualAddress();
   // 使用するリソースのサイズは頂点6つ分のサイズ
-  vertexBufferViewShere.SizeInBytes = sizeof(VertexData) * 6;
+  vertexBufferViewShere.SizeInBytes = sizeof(VertexData) * sphereVertexNum;
   // 1頂点あたりのサイズ
   vertexBufferViewShere.StrideInBytes = sizeof(VertexData);
 
@@ -1496,8 +1486,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       vertexDataShere[start + 3] = vertC;
       vertexDataShere[start + 4] = vertB;
       vertexDataShere[start + 5] = vertD;
-    };
-  };
+    }
+  }
 
   // Shere用のTransformationMatrix用のリソースを作る。Matrix4x4
   // 1つ分のサイズを用意する
@@ -1621,7 +1611,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // RootSignatureを設定。PSOに設定しているけど別途設定が必要
       commandList->SetGraphicsRootSignature(rootSignature);
       commandList->SetPipelineState(graphicsPipelineState);     // PSOを設定
-      commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+      commandList->IASetVertexBuffers(0, 1,
+                                      &vertexBufferViewShere); // VBVを設定
       // 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
       commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1635,9 +1626,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
       // SRVのDescriptorTableの先頭を設定。2はrootParameter[2]である。
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-
-      // 描画！（DrawCall/ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
-      commandList->DrawInstanced(6, 1, 0, 0);
+      // 描画！（DrawCall/ドローコール)
+      commandList->DrawInstanced(sphereVertexNum, 1, 0, 0);
+      //// 描画！（DrawCall/ドローコール）。3頂点で1つのインスタンス。インスタンスについては今後
+      //commandList->DrawInstanced(6, 1, 0, 0);
 
       // Spriteの描画。変更が必要なものだけ変更する
       commandList->IASetVertexBuffers(0, 1,
@@ -1648,14 +1640,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       // 描画！（DrawCall/ドローコール)
       commandList->DrawInstanced(6, 1, 0, 0);
 
-      // Sphereの描画。変更が必要なものだけ変更する
-      commandList->IASetVertexBuffers(0, 1,
-                                      &vertexBufferViewShere); // WBVを設定
-      // TransformationMatirxCBufferの場所を設定
-      commandList->SetGraphicsRootConstantBufferView(
-          1, transformationMatrixResourceShere->GetGPUVirtualAddress());
-      // 描画！（DrawCall/ドローコール)
-      commandList->DrawInstanced(6, 1, 0, 0);
+      //// Sphereの描画。変更が必要なものだけ変更する
+      //commandList->IASetVertexBuffers(0, 1,
+      //                                &vertexBufferViewShere); // WBVを設定
+      //// TransformationMatirxCBufferの場所を設定
+      //commandList->SetGraphicsRootConstantBufferView(
+      //    1, transformationMatrixResourceShere->GetGPUVirtualAddress());
+      
 
       // 実際のcommandListのImGuiの描画コマンドを積む
       ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
