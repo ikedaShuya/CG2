@@ -58,7 +58,24 @@ struct Matrix4x4 {
 struct VertexData {
   Vector4 position;
   Vector2 texcoord;
+  Vector3 normal;
 };
+
+struct Material {
+  Vector4 color;
+  int32_t enableLighting;
+};
+
+struct TransformationMatrix {
+  Matrix4x4 WVP;
+  /*Matrix4x4 World;*/
+};
+
+//struct DirectionalLight {
+//  Vector4 color; //!< ライトの色
+//  Vector3 direction; //!< ライトの向き
+//  float intensity; //!< 輝度
+//};
 
 // 単位行列
 Matrix4x4 MakeIdentity4x4() {
@@ -1122,6 +1139,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       D3D12_SHADER_VISIBILITY_VERTEX;              // VertexShaderで使う
   rootParameters[1].Descriptor.ShaderRegister = 0; // レジスタ番号0を使う
 
+ 
+
   descriptionRootSignature.pParameters =
       rootParameters; // ルートパラメータ配列のポインタ
   descriptionRootSignature.NumParameters =
@@ -1142,6 +1161,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       descriptorRange; // Tableの中身の配列を指定
   rootParameters[2].DescriptorTable.NumDescriptorRanges =
       _countof(descriptorRange); // Tableで利用する
+
+  //rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
+  //rootParameters[3].ShaderVisibility =
+  //    D3D12_SHADER_VISIBILITY_PIXEL;              // PixelShaderで使う
+  //rootParameters[3].Descriptor.ShaderRegister = 1; // レジスタ番号1を使う
 
   D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
   staticSamplers[0].Filter =
@@ -1176,7 +1200,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   assert(SUCCEEDED(hr));
 
   // InputLayout
-  D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
   inputElementDescs[0].SemanticName = "POSITION";
   inputElementDescs[0].SemanticIndex = 0;
   inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -1185,6 +1209,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   inputElementDescs[1].SemanticIndex = 0;
   inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
   inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+  inputElementDescs[2].SemanticName = "NORMAL";
+  inputElementDescs[2].SemanticIndex = 0;
+  inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+  inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
   D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
   inputLayoutDesc.pInputElementDescs = inputElementDescs;
   inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -1286,9 +1314,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
   *transformationMatrixData = MakeIdentity4x4();
 
+
+
   // Sprite用の頂点リソースを作る
   ID3D12Resource *vertexResourceSprite =
       CreateBufferResource(device, sizeof(VertexData) * 6);
+
+  // Sprite用のマテリアルリソースを作る
+  ID3D12Resource *materialResourceSprite =
+      CreateBufferResource(device, sizeof(Material));
+
+Material* materialDataSprite = nullptr;
+
+  materialResourceSprite->Map(0, nullptr,
+                            reinterpret_cast<void **>(&materialDataSprite));
+  
+
+  materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+  // Lightingを有効にする
+  materialDataSprite->enableLighting = false;
+
+
 
   // 頂点バッファビューを作成する
   D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
@@ -1307,18 +1354,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   // 1枚目の三角形
   vertexDataSprite[0].position = {0.0f, 360.0f, 0.0f, 1.0f}; // 左下
   vertexDataSprite[0].texcoord = {0.0f, 1.0f};
+  vertexDataSprite[0].normal = {0.0f, 0.0f, 1.0f};
   vertexDataSprite[1].position = {0.0f, 0.0f, 0.0f, 1.0f}; // 左上
   vertexDataSprite[1].texcoord = {0.0f, 0.0f};
+  vertexDataSprite[1].normal = {0.0f, 0.0f, 1.0f};
   vertexDataSprite[2].position = {640.0f, 360.0f, 0.0f, 1.0f}; // 右下
   vertexDataSprite[2].texcoord = {1.0f, 1.0f};
+  vertexDataSprite[2].normal = {0.0f, 0.0f, 1.0f};
 
   // 2枚目の三角形
   vertexDataSprite[3].position = {0.0f, 0.0f, 0.0f, 1.0f}; // 左上
   vertexDataSprite[3].texcoord = {0.0f, 0.0f};
+  vertexDataSprite[3].normal = {0.0f, 0.0f, 1.0f};
   vertexDataSprite[4].position = {640.0f, 0.0f, 0.0f, 1.0f}; // 右上
   vertexDataSprite[4].texcoord = {1.0f, 0.0f};
+  vertexDataSprite[4].normal = {0.0f, 0.0f, 1.0f};
   vertexDataSprite[5].position = {640.0f, 360.0f, 0.0f, 1.0f}; // 右下
   vertexDataSprite[5].texcoord = {1.0f, 1.0f};
+  vertexDataSprite[5].normal = {0.0f, 0.0f, 1.0f};
 
   // Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4
   // 1つ分のサイズを用意する
@@ -1340,32 +1393,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                             },
                             {0.0f, 0.0f, 0.0f}};
 
-  // 頂点バッファビューを作成する
-  D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+  // // 頂点バッファビューを作成する
+  // D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+  // 
+  // // 頂点リソースにデータを書き込む
+  // VertexData *vertexData = nullptr;
+  // // 書き込むためのアドレスを取得
+  // vertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
+  // // 左下
+  // vertexData[0].position = {-0.5f, -0.5f, 0.0f, 1.0f};
+  // vertexData[0].texcoord = {0.0f, 1.0f};
+  // 
+  // // 上
+  // vertexData[1].position = {0.0f, 0.5f, 0.0f, 1.0f};
+  // vertexData[1].texcoord = {0.5f, 0.0f};
+  // // 右下
+  // vertexData[2].position = {0.5f, -0.5f, 0.0f, 1.0f};
+  // vertexData[2].texcoord = {1.0f, 1.0f};
+  // 
+  // // 左下2
+  // vertexData[3].position = {-0.5f, -0.5f, 0.5f, 1.0f};
+  // vertexData[3].texcoord = {0.0f, 1.0f};
+  // // 上2
+  // vertexData[4].position = {0.0f, 0.0f, 0.0f, 1.0f};
+  // vertexData[4].texcoord = {0.5f, 0.0f};
+  // // 右下2
+  // vertexData[5].position = {0.5f, -0.5f, -0.5f, 1.0f};
+  // vertexData[5].texcoord = {1.0f, 1.0f};
 
-  // 頂点リソースにデータを書き込む
-  VertexData *vertexData = nullptr;
-  // 書き込むためのアドレスを取得
-  vertexResource->Map(0, nullptr, reinterpret_cast<void **>(&vertexData));
-  // 左下
-  vertexData[0].position = {-0.5f, -0.5f, 0.0f, 1.0f};
-  vertexData[0].texcoord = {0.0f, 1.0f};
-  // 上
-  vertexData[1].position = {0.0f, 0.5f, 0.0f, 1.0f};
-  vertexData[1].texcoord = {0.5f, 0.0f};
-  // 右下
-  vertexData[2].position = {0.5f, -0.5f, 0.0f, 1.0f};
-  vertexData[2].texcoord = {1.0f, 1.0f};
-
-  // 左下2
-  vertexData[3].position = {-0.5f, -0.5f, 0.5f, 1.0f};
-  vertexData[3].texcoord = {0.0f, 1.0f};
-  // 上2
-  vertexData[4].position = {0.0f, 0.0f, 0.0f, 1.0f};
-  vertexData[4].texcoord = {0.5f, 0.0f};
-  // 右下2
-  vertexData[5].position = {0.5f, -0.5f, -0.5f, 1.0f};
-  vertexData[5].texcoord = {1.0f, 1.0f};
+  
 
   // ビューポート
   D3D12_VIEWPORT viewport{};
@@ -1502,27 +1558,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       VertexData vertA = {{std::cosf(lat) * std::cosf(lon), std::sinf(lat),
                            std::cosf(lat) * std::sinf(lon), 1.0f},
                           {float(lonIndex) / float(kSubdivision),
-                           1.0f - float(latIndex) / float(kSubdivision)}};
+                           1.0f - float(latIndex) / float(kSubdivision)},
+                          {std::cosf(lat) * std::cosf(lon), std::sinf(lat),
+                           std::cosf(lat) * std::sinf(lon)}};
 
       VertexData vertB = {
           {std::cosf(lat + kLatEvery) * std::cosf(lon),
            std::sinf(lat + kLatEvery),
            std::cosf(lat + kLatEvery) * std::sinf(lon), 1.0f},
           {float(lonIndex) / float(kSubdivision),
-           1.0f - float(latIndex + 1.0f) / float(kSubdivision)}};
+                           1.0f - float(latIndex + 1.0f) / float(kSubdivision)},
+                          {std::cosf(lat) * std::cosf(lon), std::sinf(lat),
+                           std::cosf(lat) * std::sinf(lon)}};
 
       VertexData vertC = {{std::cosf(lat) * std::cosf(lon + kLonEvery),
                            std::sinf(lat),
                            std::cosf(lat) * std::sinf(lon + kLonEvery), 1.0f},
                           {float(lonIndex + 1.0f) / float(kSubdivision),
-                           1.0f - float(latIndex) / float(kSubdivision)}};
+                           1.0f - float(latIndex) / float(kSubdivision)},
+                          {std::cosf(lat) * std::cosf(lon), std::sinf(lat),
+                           std::cosf(lat) * std::sinf(lon)}};
 
       VertexData vertD = {
           {std::cosf(lat + kLatEvery) * std::cosf(lon + kLonEvery),
            std::sinf(lat + kLatEvery),
            std::cosf(lat + kLatEvery) * std::sinf(lon + kLonEvery), 1.0f},
           {float(lonIndex + 1.0f) / float(kSubdivision),
-           1.0f - float(latIndex + 1.0f) / float(kSubdivision)}};
+           1.0f - float(latIndex + 1.0f) / float(kSubdivision)},
+          {std::cosf(lat) * std::cosf(lon), std::sinf(lat),
+           std::cosf(lat) * std::sinf(lon)}};
 
       uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
       vertexDataShere[start + 0] = vertA;
@@ -1532,6 +1596,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       vertexDataShere[start + 3] = vertC;
       vertexDataShere[start + 4] = vertB;
       vertexDataShere[start + 5] = vertD;
+
+
+      vertexDataShere[start].normal.x = vertexDataShere[start].position.x;
+      vertexDataShere[start].normal.y = vertexDataShere[start].position.y;
+      vertexDataShere[start].normal.z = vertexDataShere[start].position.z;
     }
   }
 
@@ -1686,6 +1755,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       commandList->SetGraphicsRootConstantBufferView(
           1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 
+      // マテリアルCBufferの場所を設定
+      commandList->SetGraphicsRootConstantBufferView(
+          0, materialResourceSprite->GetGPUVirtualAddress());
+
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
       // 描画！（DrawCall/ドローコール)
       commandList->DrawInstanced(6, 1, 0, 0);
@@ -1789,6 +1862,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   textureResource2->Release();
 
   intermediateResource2->Release();
+
+  materialResourceSprite->Release();
 
   CoUninitialize();
 
