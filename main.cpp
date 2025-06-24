@@ -68,14 +68,14 @@ struct Material {
 
 struct TransformationMatrix {
   Matrix4x4 WVP;
-  /*Matrix4x4 World;*/
+  Matrix4x4 World;
 };
 
-//struct DirectionalLight {
-//  Vector4 color; //!< ライトの色
-//  Vector3 direction; //!< ライトの向き
-//  float intensity; //!< 輝度
-//};
+struct DirectionalLight {
+  Vector4 color; //!< ライトの色
+  Vector3 direction; //!< ライトの向き
+  float intensity; //!< 輝度
+};
 
 // 単位行列
 Matrix4x4 MakeIdentity4x4() {
@@ -1128,7 +1128,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
   // RootParameter作成。
-  D3D12_ROOT_PARAMETER rootParameters[3] = {};
+  D3D12_ROOT_PARAMETER rootParameters[4] = {};
   rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
   rootParameters[0].ShaderVisibility =
       D3D12_SHADER_VISIBILITY_PIXEL;               // PixelShaderで使う
@@ -1139,7 +1139,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
       D3D12_SHADER_VISIBILITY_VERTEX;              // VertexShaderで使う
   rootParameters[1].Descriptor.ShaderRegister = 0; // レジスタ番号0を使う
 
- 
+
 
   descriptionRootSignature.pParameters =
       rootParameters; // ルートパラメータ配列のポインタ
@@ -1162,10 +1162,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   rootParameters[2].DescriptorTable.NumDescriptorRanges =
       _countof(descriptorRange); // Tableで利用する
 
-  //rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
-  //rootParameters[3].ShaderVisibility =
-  //    D3D12_SHADER_VISIBILITY_PIXEL;              // PixelShaderで使う
-  //rootParameters[3].Descriptor.ShaderRegister = 1; // レジスタ番号1を使う
+  rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
+  rootParameters[3].ShaderVisibility =
+      D3D12_SHADER_VISIBILITY_PIXEL;              // PixelShaderで使う
+  rootParameters[3].Descriptor.ShaderRegister = 1; // レジスタ番号1を使う
+
+  
+
+  
 
   D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
   staticSamplers[0].Filter =
@@ -1618,6 +1622,23 @@ Material* materialDataSprite = nullptr;
 
   bool useMonsterBall = true;
 
+ // Sprite用のマテリアルリソースを作る
+  ID3D12Resource* materialResourcedirectionalLight =
+      CreateBufferResource(device, sizeof(DirectionalLight));
+
+  // directionalLight用のリソースを作る
+  DirectionalLight* directionalLightData = nullptr;
+
+  materialResourcedirectionalLight->Map(0, nullptr,
+      reinterpret_cast<void**>(&directionalLightData));
+
+
+  directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
+
+  directionalLightData->direction = { 0.0f,-1.0f,0.0f };
+
+  directionalLightData->intensity = 1.0f;
+
   MSG msg{};
   // ウィンドウの×ボタンが押されるまでループ
   while (msg.message != WM_QUIT) {
@@ -1735,7 +1756,7 @@ Material* materialDataSprite = nullptr;
 
       // マテリアルCBufferの場所を設定
       commandList->SetGraphicsRootConstantBufferView(
-          0, materialResource->GetGPUVirtualAddress());
+          0, materialResourceSprite->GetGPUVirtualAddress());
 
       // wvp用のCBufferの場所を設定
       commandList->SetGraphicsRootConstantBufferView(
@@ -1758,6 +1779,10 @@ Material* materialDataSprite = nullptr;
       // マテリアルCBufferの場所を設定
       commandList->SetGraphicsRootConstantBufferView(
           0, materialResourceSprite->GetGPUVirtualAddress());
+
+      // マテリアルCBufferの場所を設定
+      commandList->SetGraphicsRootConstantBufferView(
+          0, materialResourcedirectionalLight->GetGPUVirtualAddress());
 
       commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
       // 描画！（DrawCall/ドローコール)
