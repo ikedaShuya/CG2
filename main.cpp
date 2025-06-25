@@ -1288,39 +1288,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	/*ID3D12Resource* vertexResource =
 		CreateBufferResource(device, sizeof(VertexData) * 6);*/
 
-	//// マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
-	//ID3D12Resource* materialResource =
-	//	CreateBufferResource(device, sizeof(Material));
-	//// マテリアルにデータを書き込む
-	//Material* materialData = nullptr;
+		//// マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
+		//ID3D12Resource* materialResource =
+		//	CreateBufferResource(device, sizeof(Material));
+		//// マテリアルにデータを書き込む
+		//Material* materialData = nullptr;
 
-	//// 書き込むためのアドレスを取得
-	//materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-	//// 今回は赤を書き込んでみる
-	//materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+		//// 書き込むためのアドレスを取得
+		//materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
+		//// 今回は赤を書き込んでみる
+		//materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	//materialData->enableLighting = false;
+		//materialData->enableLighting = false;
 
-	//// Transform変数を作る
-	//Transform transform{
-	//	{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-
-
-	//// WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
-	//ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(TransformationMatrix));
-	//// データを書き込む
-	//TransformationMatrix* wvpData = nullptr;
-	//// 書き込むためのアドレスを取得
-	//wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
-	//// 単位行列を書き込んでおく
-	//wvpData->WVP = MakeIdentity4x4();
-
-	//wvpData->World = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+		//// Transform変数を作る
+		//Transform transform{
+		//	{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 
+		//// WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
+		//ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(TransformationMatrix));
+		//// データを書き込む
+		//TransformationMatrix* wvpData = nullptr;
+		//// 書き込むためのアドレスを取得
+		//wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+		//// 単位行列を書き込んでおく
+		//wvpData->WVP = MakeIdentity4x4();
+
+		//wvpData->World = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
 
-	// Sprite用の頂点リソースを作る
+
+
+		// Sprite用の頂点リソースを作る
 	ID3D12Resource* vertexResourceSprite =
 		CreateBufferResource(device, sizeof(VertexData) * 6);
 
@@ -1377,13 +1377,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexDataSprite[5].texcoord = { 1.0f, 1.0f };
 	vertexDataSprite[5].normal = { 0.0f, 0.0f, 1.0f };
 
-Transform transformSprite{ {1.0f, 1.0f, 1.0f},
-							  {
-								  0.0f,
-								  0.0f,
-								  0.0f,
-							  },
-							  {0.0f, 0.0f, 0.0f} };
+	Transform transformSprite{ {1.0f, 1.0f, 1.0f},
+								  {
+									  0.0f,
+									  0.0f,
+									  0.0f,
+								  },
+								  {0.0f, 0.0f, 0.0f} };
 
 	// Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4
 	// 1つ分のサイズを用意する
@@ -1401,7 +1401,7 @@ Transform transformSprite{ {1.0f, 1.0f, 1.0f},
 
 
 
-	
+
 
 	// // 頂点バッファビューを作成する
 	// D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
@@ -1549,7 +1549,7 @@ Transform transformSprite{ {1.0f, 1.0f, 1.0f},
 	// 今回は赤を書き込んでみる
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	materialData->enableLighting = false;
+	materialData->enableLighting = true;
 
 	// 頂点バッファビューを作成する
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
@@ -1662,6 +1662,9 @@ Transform transformSprite{ {1.0f, 1.0f, 1.0f},
 
 	directionalLightData->intensity = 1.0f;
 
+	//平行光源の切り替え	
+	bool useLighting = false;
+
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
@@ -1680,12 +1683,7 @@ Transform transformSprite{ {1.0f, 1.0f, 1.0f},
 			// 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 			// ImGui::ShowDemoWindow();
 
-			ImGui::Begin("Window");
-			ImGui::ColorEdit3("color", &(*materialDataSprite).color.x);
-			ImGui::SliderFloat3("translateSprite", &transformSprite.translate.x, 0.0f,
-				600.0f);
-			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-			ImGui::End();
+			
 
 			transformSphere.rotate.y += 0.009f;
 
@@ -1745,6 +1743,27 @@ Transform transformSprite{ {1.0f, 1.0f, 1.0f},
 					Multiply(viewMatrixSprite, projectionMatrixSprite));
 
 			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
+
+			ImGui::Begin("Settings");
+
+			ImGui::DragFloat3("CameraTransrotate", &cameraTransform.translate.x);
+			ImGui::DragFloat("CameraRotateX", &cameraTransform.rotate.x);
+			ImGui::DragFloat("CameraRotateY", &cameraTransform.rotate.y);
+			ImGui::DragFloat("CameraRotateZ", &cameraTransform.rotate.z);
+			ImGui::ColorEdit4("color", &(*materialData).color.x);
+			ImGui::Checkbox("enableLighting", &useLighting);
+
+			ImGui::ColorEdit4("color", &(*materialDataSprite).color.x);
+			ImGui::DragFloat3("TranslateSprite", &transformSprite.translate.x);
+			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+
+			ImGui::ColorEdit3("LightColor", &(*directionalLightData).color.x);
+			ImGui::DragFloat3("LightDirection", &directionalLightData->direction.x);
+			ImGui::DragFloat("Intensity", &directionalLightData->intensity);
+
+			ImGui::End();
+
+			useLighting ? materialData->enableLighting = true : materialData->enableLighting = false;
 
 			// ImGuiの内部コマンドを生成する
 			ImGui::Render();
@@ -1944,6 +1963,8 @@ Transform transformSprite{ {1.0f, 1.0f, 1.0f},
 	intermediateResource2->Release();
 
 	materialResourceSprite->Release();
+
+	materialResourcedirectionalLight->Release();
 
 	CoUninitialize();
 
