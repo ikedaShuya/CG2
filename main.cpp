@@ -1729,6 +1729,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			transformationMatrixDataSphere->WVP = worldViewProjectionMatrix;
 
+			transformationMatrixDataSphere->World = worldMatrixSphere;
+
 
 
 			// Sprite用のWorldViewProjectionMatrixを作る
@@ -1743,6 +1745,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					Multiply(viewMatrixSprite, projectionMatrixSprite));
 
 			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
+
+			transformationMatrixDataSphere->World = worldMatrixSprite;
 
 			ImGui::Begin("Settings");
 
