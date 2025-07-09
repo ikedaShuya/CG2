@@ -14,6 +14,7 @@
 #include <string>
 #include <strsafe.h>
 #include <vector>
+#include <sstream>
 
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
@@ -87,6 +88,11 @@ struct DirectionalLight
 	Vector4 color; //!< ライトの色
 	Vector3 direction; //!< ライトの向き
 	float intensity; //!< 輝度
+};
+
+struct ModelData
+{
+	std::vector<VertexData> vertices;
 };
 
 // 単位行列
@@ -885,6 +891,23 @@ GetGPUDescriptorHandle(ID3D12DescriptorHeap *descriptorHeap, uint32_t descriptor
 	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	handleGPU.ptr += (descriptorSize * index);
 	return handleGPU;
+}
+
+ModelData LoadObjFile(const std::string &directoryPath, const std::string &filename) {
+	ModelData modelData;
+	std::vector<Vector4> positions;
+	std::vector<Vector3> normals;
+	std::vector<Vector2> texcoords;
+	std::string line;
+
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
+
+	while (std::getline(file, line)) {
+		std::string identifier;
+		std::istringstream s(line);
+		s >> 
+	}
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
