@@ -906,7 +906,43 @@ ModelData LoadObjFile(const std::string &directoryPath, const std::string &filen
 	while (std::getline(file, line)) {
 		std::string identifier;
 		std::istringstream s(line);
-		s >> 
+		s >> identifier; // 先頭の識別子を読む
+
+		// identifierに応じた処理
+		if (identifier == "v") {
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			positions.push_back(position);
+		} else if (identifier == "vt") {
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
+			texcoords.push_back(texcoord);
+		} else if (identifier == "vn") {
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		} else if (identifier == "f") {
+			// 面は三角限定。その他は未対応
+			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
+				std::string vertexDefinition;
+				s >> vertexDefinition;
+				// 頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
+				std::istringstream v(vertexDefinition);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3; ++element) {
+					std::string index;
+					std::getline(v, index, '/'); // 区切りでインデックスを読んでいく
+					elementIndices[element] = std::stoi(index);
+				}
+				// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
+				Vector4 position = positions[elementIndices[0] - 1];
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				Vector3 normal = normals[elementIndices[2] - 1];
+				VertexData vertex = { position,texcoord,normal };
+				modelData.vertices.push_back(vertex);
+			}
+		}
 	}
 }
 
@@ -1389,150 +1425,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{0.0f, 0.0f, -10.0f}
 	};
 
-	//#pragma region Sphere
-	//
-	//	uint32_t kSubdivision = 16;
-	//	// 頂点数
-	//	uint32_t sphereVertexCount = (kSubdivision + 1) * (kSubdivision + 1);
-	//	// インデックス数
-	//	uint32_t sphereIndexCount = kSubdivision * kSubdivision * 6;
-	//	
-	//	// Sphere用の頂点リソースを作る
-	//	ID3D12Resource *vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * sphereIndexCount);
-	//	// マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
-	//	ID3D12Resource *materialResource = CreateBufferResource(device, sizeof(Material));
-	//	// マテリアルにデータを書き込む
-	//	Material *materialData = nullptr;
-	//	// 書き込むためのアドレスを取得
-	//	materialResource->Map(0, nullptr, reinterpret_cast<void **>(&materialData));
-	//	// 今回は赤を書き込んでみる
-	//	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	//	materialData->enableLighting = true;
-	//	// 頂点バッファビューを作成する
-	//	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere {};
-	//	// リソースの先頭のアドレスから使う
-	//	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
-	//	// 使用するリソースのサイズは頂点6つ分のサイズ
-	//	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * sphereIndexCount;
-	//	// 1頂点あたりのサイズ
-	//	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
-	//	VertexData *vertexDataSphere = nullptr;
-	//	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void **>(&vertexDataSphere));
-	//	const float kLonEvery = std::numbers::pi_v<float> *2.0f / float(kSubdivision);
-	//	const float kLatEvery = std::numbers::pi_v<float> / float(kSubdivision);
-	//	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex)
-	//	{
-	//		float lat = -std::numbers::pi_v<float> / 2.0f + kLatEvery * latIndex;
-	//		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex)
-	//		{
-	//			float lon = lonIndex * kLonEvery;
-	//			VertexData vertA = {
-	//				{
-	//					std::cosf(lat) * std::cosf(lon),
-	//					std::sinf(lat),
-	//					std::cosf(lat) * std::sinf(lon),
-	//					1.0f
-	//				},
-	//				{
-	//					float(lonIndex) / float(kSubdivision),
-	//					1.0f - float(latIndex) / float(kSubdivision)
-	//				},
-	//				{
-	//					vertA.position.x,
-	//					vertA.position.y,
-	//					vertA.position.z
-	//				}
-	//			};
-	//			VertexData vertB = {
-	//				{
-	//					std::cosf(lat + kLatEvery) * std::cosf(lon),
-	//					std::sinf(lat + kLatEvery),
-	//					std::cosf(lat + kLatEvery) * std::sinf(lon),
-	//					1.0f
-	//				},
-	//				{
-	//					float(lonIndex) / float(kSubdivision),
-	//					1.0f - float(latIndex + 1.0f) / float(kSubdivision)
-	//				},
-	//				{
-	//					vertB.position.x,
-	//					vertB.position.y,
-	//					vertB.position.z
-	//				}
-	//			};
-	//			VertexData vertC = {
-	//				{
-	//					std::cosf(lat) * std::cosf(lon + kLonEvery),
-	//					std::sinf(lat),
-	//					std::cosf(lat) * std::sinf(lon + kLonEvery),
-	//					1.0f
-	//				},
-	//				{
-	//					float(lonIndex + 1.0f) / float(kSubdivision),
-	//					1.0f - float(latIndex) / float(kSubdivision)
-	//				},
-	//				{
-	//					vertC.position.x,
-	//					vertC.position.y,
-	//					vertC.position.z
-	//				}
-	//			};
-	//			VertexData vertD = {
-	//				{
-	//					std::cosf(lat + kLatEvery) * std::cosf(lon + kLonEvery),
-	//					std::sinf(lat + kLatEvery),
-	//					std::cosf(lat + kLatEvery) * std::sinf(lon + kLonEvery),
-	//					1.0f
-	//				},
-	//				{
-	//					float(lonIndex + 1.0f) / float(kSubdivision),
-	//					1.0f - float(latIndex + 1.0f) / float(kSubdivision)
-	//				},
-	//				{
-	//					vertD.position.x,
-	//					vertD.position.y,
-	//					vertD.position.z
-	//				}
-	//			};
-	//			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
-	//			vertexDataSphere[start + 0] = vertA;
-	//			vertexDataSphere[start + 1] = vertB;
-	//			vertexDataSphere[start + 2] = vertC;
-	//			vertexDataSphere[start + 3] = vertC;
-	//			vertexDataSphere[start + 4] = vertB;
-	//			vertexDataSphere[start + 5] = vertD;
-	//		}
-	//	}
-	//	// Transform変数を作る
-	//	Transform transformSphere {
-	//		{1.0f, 1.0f, 1.0f},
-	//		{0.0f, 0.0f, 0.0f},
-	//		{0.0f, 0.0f, 0.0f}
-	//	};
-	//	// Shere用のTransformationMatrix用のリソースを作る。Matrix4x4
-	//	// 1つ分のサイズを用意する
-	//	ID3D12Resource *transformationMatrixResourceSphere = CreateBufferResource(device, sizeof(TransformationMatrix));
-	//	// データを書き込む
-	//	TransformationMatrix *transformationMatrixDataSphere = nullptr;
-	//	// 書き込むためのアドレスを取得
-	//	transformationMatrixResourceSphere->Map(0, nullptr, reinterpret_cast<void **>(&transformationMatrixDataSphere));
-	//	// 単位行列を書き込んでおく
-	//	transformationMatrixDataSphere->WVP = MakeIdentity4x4();
-	//
-	//	ID3D12Resource *indexResourceSphere = CreateBufferResource(device, sizeof(uint32_t) * sphereIndexCount);
-	//	D3D12_INDEX_BUFFER_VIEW indexBufferViewSphere {};
-	//	// リソースの先頭のアドレスから使う
-	//	indexBufferViewSphere.BufferLocation = indexResourceSphere->GetGPUVirtualAddress();
-	//	// 使用するリソースのサイズはインデックス6つ分のサイズ
-	//	indexBufferViewSphere.SizeInBytes = sizeof(uint32_t) * sphereIndexCount;
-	//	// インデックスはuint32_tとする
-	//	indexBufferViewSphere.Format = DXGI_FORMAT_R32_UINT;
-	//	// インデックスリソースにデータを書き込む
-	//	uint32_t *indexDataSphere = nullptr;
-	//	indexResourceSphere->Map(0, nullptr, reinterpret_cast<void **>(&indexDataSphere));
-	//
-	//#pragma endregion
-
 	Transform uvTransformSprite {
 		{1.0f,1.0f,1.0f},
 		{0.0f,0.0f,0.0f},
@@ -1545,16 +1437,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	uint32_t vertexCount = (kSubdivision + 1) * (kSubdivision + 1);
 	uint32_t indexCount = kSubdivision * kSubdivision * 6;
 
+	// モデル読み込み
+	ModelData modelData = LoadObjFile("resources", "plane.obj");
+
 	// 頂点リソース
-	ID3D12Resource *vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * vertexCount);
-	VertexData *vertexDataSphere = nullptr;
-	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void **>(&vertexDataSphere));
+	ID3D12Resource *vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
 
 	// 頂点バッファビュー
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere {};
-	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
-	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * vertexCount;
+	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress(); // リソースの先頭のアドレスから使う
+	vertexBufferViewSphere.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size()); // 使用するリソースのサイズは頂点のサイズ
 	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
+
+	// 頂点リソースにデータを書き込む
+	VertexData *vertexDataSphere = nullptr;
+	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void **>(&vertexDataSphere)); // 書き込むためのアドレスを取得
+	std::memcpy(vertexDataSphere, modelData.vertices.data(), sizeof(VertexData) *modelData.vertices.size()); // 頂点データをリソースにコピー
 
 	// 頂点データ生成
 	const float kLonEvery = std::numbers::pi_v<float> *2.0f / float(kSubdivision);
