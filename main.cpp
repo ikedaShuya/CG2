@@ -1526,7 +1526,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Transform cameraTransform {
 		{1.0f, 1.0f, 1.0f},
 		{0.0f, 0.0f, 0.0f},
-		{0.0f, 4.0f, -10.0f}
+		{0.0f, 0.0f, -10.0f}
 	};
 
 	Transform uvTransformSprite {
@@ -1646,24 +1646,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			ImGui::Begin("Settings");
 
-			ImGui::InputFloat3("CameraTranslate", &cameraTransform.translate.x);
+			// カメラ設定（折りたたみ可能）
+			if (ImGui::CollapsingHeader("Camera Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::DragFloat3("Position", &cameraTransform.translate.x, 1.0f, -400.0f, 0.0f);
+				ImGui::SliderFloat("Rotate X", &cameraTransform.rotate.x, -0.124f, 0.124f, "%.3f rad");
+				ImGui::SliderFloat("Rotate Y", &cameraTransform.rotate.y, -0.284f, 0.284f, "%.3f rad");
+				ImGui::SliderAngle("Rotate Z", &cameraTransform.rotate.z);
+			}
 
-			ImGui::SliderFloat("CameraRotateX", &cameraTransform.rotate.x, -0.124f, 0.124f, "%.1f rad (%.0f deg)", ImGuiSliderFlags_NoInput);
+			// マテリアル設定
+			if (ImGui::CollapsingHeader("Material Settings")) {
+				ImGui::ColorEdit4("Color", &(*materialData).color.x);
+				ImGui::Checkbox("Enable Lighting", &useLighting);
+			}
 
-			// ImGui::SliderFloat("CameraRotateY", &cameraTransform.rotate.y, -0.284f, 0.284f);
-			// ImGui::SliderFloat("CameraRotateZ", &cameraTransform.rotate.z, -6.28f, 6.28f);
-			// ImGui::ColorEdit4("color", &(*materialData).color.x);
-			// ImGui::Checkbox("enableLighting", &useLighting);
-			// 
-			// ImGui::ColorEdit3("LightColor", &(*directionalLightData).color.x);
-			// ImGui::SliderFloat3("LightDirection", &directionalLightData->direction.x, -1.0f, 0.5f);
-			// ImGui::SliderFloat("Intensity", &directionalLightData->intensity, -1.0f, 3.0f);
-			// ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-			// ImGui::SliderFloat3("TranslateSprite", &transformSprite.translate.x, -173.0f, 0.0f);
-			// 
-			// ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
-			// ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-			// ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+			// ライト設定
+			if (ImGui::CollapsingHeader("Directional Light")) {
+				ImGui::ColorEdit3("Color", &directionalLightData->color.x);
+				ImGui::DragFloat3("Direction", &directionalLightData->direction.x, 0.01f, -1.0f, 0.5f);
+				ImGui::SliderFloat("Intensity", &directionalLightData->intensity, 0.0f, 3.0f);
+			}
+
+			// モンスターボール表示切替
+			if (ImGui::CollapsingHeader("Monster Ball")) {
+				ImGui::Checkbox("Use Monster Ball", &useMonsterBall);
+			}
+
+			// スプライト変形設定
+			if (ImGui::CollapsingHeader("Sprite Transform")) {
+				ImGui::DragFloat3("Translate", &transformSprite.translate.x, 1.0f, -173.0f, 0.0f);
+				ImGui::DragFloat2("UV Translate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
+				ImGui::DragFloat2("UV Scale", &uvTransformSprite.scale.x, 0.01f, 0.01f, 10.0f);
+				ImGui::SliderAngle("UV Rotate", &uvTransformSprite.rotate.z);
+			}
 
 			ImGui::End();
 
@@ -1765,7 +1780,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			commandList->IASetIndexBuffer(&indexBufferViewSprite); // IBVを設定
 
 			// 描画！（DrawCall/ドローコール）6個のインデックスを使用し1つのインスタンスを描画。その他は当面0で良い
-			// commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 		#pragma endregion
 
