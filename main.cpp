@@ -1825,9 +1825,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			// 描画！（DrawCall/ドローコール)
 			commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 
-			// 描画！（DrawCall/ドローコール）6個のインデックスを使用し1つのインスタンスを描画。その他は当面0で良い
-			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-
 		#pragma endregion
 
 		#pragma region Sprite
@@ -1843,9 +1840,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
 			commandList->IASetIndexBuffer(&indexBufferViewSprite); // IBVを設定
-
-			// 描画！（DrawCall/ドローコール)
-			commandList->DrawInstanced(4, 1, 0, 0);
 
 			// 描画！（DrawCall/ドローコール）6個のインデックスを使用し1つのインスタンスを描画。その他は当面0で良い
 			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
