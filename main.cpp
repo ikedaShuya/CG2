@@ -1641,43 +1641,44 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			// 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
-			// ImGui::ShowDemoWindow();
-
 			ImGui::Begin("Settings");
 
-			// カメラ設定（折りたたみ可能）
-			if (ImGui::CollapsingHeader("Camera Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-				ImGui::DragFloat3("Position", &cameraTransform.translate.x, 1.0f, -400.0f, 0.0f);
-				ImGui::SliderFloat("Rotate X", &cameraTransform.rotate.x, -0.124f, 0.124f, "%.3f rad");
-				ImGui::SliderFloat("Rotate Y", &cameraTransform.rotate.y, -0.284f, 0.284f, "%.3f rad");
-				ImGui::SliderAngle("Rotate Z", &cameraTransform.rotate.z);
+			if (ImGui::CollapsingHeader("Obj", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+				ImGui::DragFloat3("Translate##Obj", &transformSphere.translate.x, 0.01f);
+				ImGui::DragFloat3("Rotate##Obj", &transformSphere.rotate.x, 0.01f);
+				ImGui::DragFloat3("Scale##Obj", &transformSphere.scale.x, 0.01f);
+
+				if (ImGui::Button("Delete##Obj")) {
+					transformSphere.translate = { 0.0f, 0.0f, 0.0f };
+					transformSphere.rotate = { 0.0f, 0.0f, 0.0f };
+					transformSphere.scale = { 1.0f, 1.0f, 1.0f };
+				}
+
+				ImGui::Indent(20.0f);
+				if (ImGui::CollapsingHeader("Material##Obj", ImGuiTreeNodeFlags_DefaultOpen)) {
+					ImGui::ColorEdit4("Color##Obj", &materialData->color.x);
+				}
+				ImGui::Unindent(20.0f);
 			}
 
-			// マテリアル設定
-			if (ImGui::CollapsingHeader("Material Settings")) {
-				ImGui::ColorEdit4("Color", &(*materialData).color.x);
-				ImGui::Checkbox("Enable Lighting", &useLighting);
-			}
+			if (ImGui::CollapsingHeader("Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-			// ライト設定
-			if (ImGui::CollapsingHeader("Directional Light")) {
-				ImGui::ColorEdit3("Color", &directionalLightData->color.x);
-				ImGui::DragFloat3("Direction", &directionalLightData->direction.x, 0.01f, -1.0f, 0.5f);
-				ImGui::SliderFloat("Intensity", &directionalLightData->intensity, 0.0f, 3.0f);
-			}
+				ImGui::DragFloat3("Translate##Sprite", &transformSprite.translate.x, 1.0f);
+				ImGui::DragFloat3("Rotate##Sprite", &transformSprite.rotate.x, 0.01f);
+				ImGui::DragFloat3("Scale##Sprite", &transformSprite.scale.x, 0.01f);
 
-			// モンスターボール表示切替
-			if (ImGui::CollapsingHeader("Monster Ball")) {
-				ImGui::Checkbox("Use Monster Ball", &useMonsterBall);
-			}
+				if (ImGui::Button("Delete##Sprite")) {
+					transformSprite.translate = { 0.0f, 0.0f, 0.0f };
+					transformSprite.rotate = { 0.0f, 0.0f, 0.0f };
+					transformSprite.scale = { 1.0f, 1.0f, 1.0f };
+				}
 
-			// スプライト変形設定
-			if (ImGui::CollapsingHeader("Sprite Transform")) {
-				ImGui::DragFloat3("Translate", &transformSprite.translate.x, 1.0f, -173.0f, 0.0f);
-				ImGui::DragFloat2("UV Translate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
-				ImGui::DragFloat2("UV Scale", &uvTransformSprite.scale.x, 0.01f, 0.01f, 10.0f);
-				ImGui::SliderAngle("UV Rotate", &uvTransformSprite.rotate.z);
+				ImGui::Indent(20.0f);
+				if (ImGui::CollapsingHeader("Material##Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
+					ImGui::ColorEdit4("Color##Sprite", &materialDataSprite->color.x);
+				}
+				ImGui::Unindent(20.0f);
 			}
 
 			ImGui::End();
