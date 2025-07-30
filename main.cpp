@@ -1420,7 +1420,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	uint32_t indexCount = kSubdivision * kSubdivision * 6;
 
 	// モデル読み込み
-	ModelData modelData = LoadObjFile("resources", "plane.obj");
+	ModelData modelData = LoadObjFile("resources", "axis.obj");
 
 	// 頂点リソース
 	ID3D12Resource *vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
