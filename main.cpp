@@ -1624,6 +1624,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//平行光源の切り替え	
 	bool useLighting = true;
 
+	bool showSprite = true;
+
 	MSG msg {};
 	// ウィンドウの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT)
@@ -1643,6 +1645,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			ImGui::Begin("Settings");
 
+			ImGui::Checkbox("Show Sprite", &showSprite);
+
+			ImGui::Separator();
+
 			if (ImGui::CollapsingHeader("Obj", ImGuiTreeNodeFlags_DefaultOpen)) {
 
 				ImGui::DragFloat3("Translate##Obj", &transformSphere.translate.x, 0.01f);
@@ -1656,11 +1662,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				}
 
 				ImGui::Indent(20.0f);
-				if (ImGui::CollapsingHeader("Material##Obj", ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (ImGui::CollapsingHeader("Material##Obj")) {
 					ImGui::ColorEdit4("Color##Obj", &materialData->color.x);
 				}
 				ImGui::Unindent(20.0f);
 			}
+
+			ImGui::Separator();
 
 			if (ImGui::CollapsingHeader("Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -1675,10 +1683,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				}
 
 				ImGui::Indent(20.0f);
-				if (ImGui::CollapsingHeader("Material##Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (ImGui::CollapsingHeader("Material##Sprite")) {
 					ImGui::ColorEdit4("Color##Sprite", &materialDataSprite->color.x);
 				}
 				ImGui::Unindent(20.0f);
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::ColorEdit3("Color", &directionalLightData->color.x);
+				ImGui::DragFloat3("Direction", &directionalLightData->direction.x, 0.01f);
+				ImGui::DragFloat("Intensity", &directionalLightData->intensity);
 			}
 
 			ImGui::End();
@@ -1768,20 +1784,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		#pragma region Sprite
 
-			// Spriteの描画。変更が必要なものだけ変更する
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // WBVを設定
-			// TransformationMatirxCBufferの場所を設定
-			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+			if (showSprite) {
 
-			// マテリアルCBufferの場所を設定
-			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+				// Spriteの描画。変更が必要なものだけ変更する
+				commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // WBVを設定
+				// TransformationMatirxCBufferの場所を設定
+				commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+				// マテリアルCBufferの場所を設定
+				commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 
-			commandList->IASetIndexBuffer(&indexBufferViewSprite); // IBVを設定
+				commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-			// 描画！（DrawCall/ドローコール）6個のインデックスを使用し1つのインスタンスを描画。その他は当面0で良い
-			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+				commandList->IASetIndexBuffer(&indexBufferViewSprite); // IBVを設定
+
+				// 描画！（DrawCall/ドローコール）6個のインデックスを使用し1つのインスタンスを描画。その他は当面0で良い
+				commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+
+			}
 
 		#pragma endregion
 
