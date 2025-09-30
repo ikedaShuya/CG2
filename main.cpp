@@ -1,5 +1,23 @@
 #include <Windows.h>
 #include <cstdint>
+#include <string>
+#include <format>
+
+#pragma region ログ
+
+void Log(const std::string &message) {
+	OutputDebugStringA(message.c_str());
+}
+
+std::wstring ConvertString(const std::string &str) {
+	return std::wstring();
+}
+
+std::string ConvertString(const std::wstring &str) {
+	return std::string();
+}
+
+#pragma endregion
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -63,8 +81,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
-	// 出力ウィンドウへの文字出力
-	OutputDebugStringA("Hello,DirectX!\n");
+	// 出力ウィンドウへの文字出力 (Log 関数を使用)
+	Log("Hello,DirectX!\n");
 
 #pragma region メインループ
 
