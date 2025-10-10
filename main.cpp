@@ -41,6 +41,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 // Windowsアプリでのエントリーポイント（main関数）
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
+#pragma region ログファイル
+
 	// ログのディレクトリを用意
 	std::filesystem::create_directory("logs");
 
@@ -57,6 +59,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::string logFilePath = std::string("logs/") + dateString + ".log";
 	// ファイルを作って書き込み準備
 	std::ofstream logStream(logFilePath);
+
+#pragma endregion
 
 #pragma region ウィンドウを作ろう
 
