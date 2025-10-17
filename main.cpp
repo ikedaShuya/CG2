@@ -1335,6 +1335,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	D3D12_BLEND_DESC blendDesc {};
 	// すべての色要素を書き込む
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	// blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+	// blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	// blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	// blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	// blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;	
 
 	// RasiterzerStateの設定
 	D3D12_RASTERIZER_DESC rasterizerDesc {};
@@ -1420,7 +1432,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	uint32_t indexCount = kSubdivision * kSubdivision * 6;
 
 	// モデル読み込み
-	ModelData modelData = LoadObjFile("resources", "plane.obj");
+	ModelData modelData = LoadObjFile("resources", "fence.obj");
 
 	// 頂点リソース
 	ID3D12Resource *vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
@@ -1624,7 +1636,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//平行光源の切り替え	
 	bool useLighting = true;
 
-	bool showSprite = true;
+	bool showSprite = false;
 
 	MSG msg {};
 	// ウィンドウの×ボタンが押されるまでループ
@@ -1699,7 +1711,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 			ImGui::End();
 
-			transformSphere.rotate.y += 0.009f;
+			// transformSphere.rotate.y += 0.009f;
 
 			Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.translate);
 			Matrix4x4 cameraMatrixSphere = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
