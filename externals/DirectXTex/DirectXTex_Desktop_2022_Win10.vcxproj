@@ -14,6 +14,55 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BC.cpp" />
+    <ClCompile Include="BC4BC5.cpp" />
+    <ClCompile Include="BC6HBC7.cpp" />
+    <ClCompile Include="BCDirectCompute.cpp" />
+    <ClCompile Include="DirectXTexCompress.cpp" />
+    <ClCompile Include="DirectXTexCompressGPU.cpp" />
+    <ClCompile Include="DirectXTexConvert.cpp" />
+    <ClCompile Include="DirectXTexD3D11.cpp" />
+    <ClCompile Include="DirectXTexD3D12.cpp" />
+    <ClCompile Include="DirectXTexDDS.cpp" />
+    <ClCompile Include="DirectXTexFlipRotate.cpp" />
+    <ClCompile Include="DirectXTexHDR.cpp" />
+    <ClCompile Include="DirectXTexImage.cpp" />
+    <ClCompile Include="DirectXTexMipMaps.cpp" />
+    <ClCompile Include="DirectXTexMisc.cpp" />
+    <ClCompile Include="DirectXTexNormalMaps.cpp" />
+    <ClCompile Include="DirectXTexPMAlpha.cpp" />
+    <ClCompile Include="DirectXTexResize.cpp" />
+    <ClCompile Include="DirectXTexTGA.cpp" />
+    <ClCompile Include="DirectXTexUtil.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="DirectXTexWIC.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BC.h" />
+    <ClInclude Include="BCDirectCompute.h" />
+    <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="DDS.h" />
+    <ClInclude Include="DirectXTex.h" />
+    <ClInclude Include="DirectXTexP.h" />
+    <ClInclude Include="filters.h" />
+    <ClInclude Include="scoped.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CLInclude Include="DirectXTex.inl" />
+    <None Include="Shaders\BC6HEncode.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shaders\CompileShaders.cmd" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\BC7Encode.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>DirectXTex</ProjectName>
     <ProjectGuid>{371B9FA9-4C90-4AC6-A123-ACED756D6C77}</ProjectGuid>
@@ -157,53 +206,6 @@
       <EnableDPIAwareness>false</EnableDPIAwareness>
     </Manifest>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <None Include="Shaders\BC6HEncode.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Shaders\BC7Encode.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CLInclude Include="BC.h" />
-    <ClCompile Include="BC.cpp" />
-    <ClCompile Include="BC4BC5.cpp" />
-    <ClCompile Include="BC6HBC7.cpp" />
-    <ClInclude Include="BCDirectCompute.h" />
-    <ClInclude Include="d3dx12.h" />
-    <CLInclude Include="DDS.h" />
-    <ClInclude Include="filters.h" />
-    <CLInclude Include="scoped.h" />
-    <CLInclude Include="DirectXTex.h" />
-    <CLInclude Include="DirectXTexP.h" />
-    <CLInclude Include="DirectXTex.inl" />
-    <ClCompile Include="BCDirectCompute.cpp" />
-    <ClCompile Include="DirectXTexCompress.cpp" />
-    <ClCompile Include="DirectXTexCompressGPU.cpp" />
-    <ClCompile Include="DirectXTexConvert.cpp" />
-    <ClCompile Include="DirectXTexD3D11.cpp" />
-    <ClCompile Include="DirectXTexD3D12.cpp" />
-    <ClCompile Include="DirectXTexDDS.cpp" />
-    <ClCompile Include="DirectXTexFlipRotate.cpp" />
-    <ClCompile Include="DirectXTexHDR.cpp" />
-    <ClCompile Include="DirectXTexImage.cpp" />
-    <ClCompile Include="DirectXTexMipMaps.cpp" />
-    <ClCompile Include="DirectXTexMisc.cpp" />
-    <ClCompile Include="DirectXTexNormalMaps.cpp" />
-    <ClCompile Include="DirectXTexPMAlpha.cpp" />
-    <ClCompile Include="DirectXTexResize.cpp" />
-    <ClCompile Include="DirectXTexTGA.cpp" />
-    <ClCompile Include="DirectXTexUtil.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="DirectXTexWIC.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\CompileShaders.cmd" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
   <Target Name="ATGEnsureShaders" BeforeTargets="PrepareForBuild">
