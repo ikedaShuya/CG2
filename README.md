@@ -1,4 +1,4 @@
-## master branch
+## master
 
 | Debug | Release |
 | :---: | :---: |
