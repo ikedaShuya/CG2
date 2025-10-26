@@ -1,8 +1,5 @@
-master
+## master branch
 
-Debug
-
-[![.github/workflows/DebugBuild.yml](https://github.com/ikedaShuya/CG2/actions/workflows/DebugBuild.yml/badge.svg?branch=master)](https://github.com/ikedaShuya/CG2/actions/workflows/DebugBuild.yml)
-
-
-[![.github/workflows/ReleaseBuild.yml](https://github.com/ikedaShuya/CG2/actions/workflows/ReleaseBuild.yml/badge.svg?branch=master)](https://github.com/ikedaShuya/CG2/actions/workflows/ReleaseBuild.yml)
+| Debug | Release |
+| :---: | :---: |
+| [![.github/workflows/DebugBuild.yml](https://github.com/ikedaShuya/CG2/actions/workflows/DebugBuild.yml/badge.svg?branch=master)](https://github.com/ikedaShuya/CG2/actions/workflows/DebugBuild.yml) | [![.github/workflows/ReleaseBuild.yml](https://github.com/ikedaShuya/CG2/actions/workflows/ReleaseBuild.yml/badge.svg?branch=master)](https://github.com/ikedaShuya/CG2/actions/workflows/ReleaseBuild.yml) |
