@@ -15,6 +15,7 @@
 #include <strsafe.h>
 #include <vector>
 #include <sstream>
+#include "Input.h"
 
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
@@ -993,6 +994,8 @@ ModelData LoadObjFile(const std::string &directoryPath, const std::string &filen
 	return modelData;
 }
 
+
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -1627,6 +1630,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	bool showSprite = true;
 
+	// ポインタ
+	Input *input = nullptr;
+
+	// 入力の初期化
+	input = new Input();
+	input->Initialize(wc.hInstance, hwnd);
+
 	MSG msg {};
 	// ウィンドウの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT)
@@ -1724,6 +1734,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			materialDataSprite->uvTranform = uvTransformMatrix;
 
 			useLighting ? materialData->enableLighting = true : materialData->enableLighting = false;
+
+
+
+			// 入力の更新
+			input->Update();
+
+			// 数字の0キーが押されていたら
+			if (input->PushKey(DIK_W)) 
+			{
+				transformSphere.translate.y += 0.01f;
+			}
+
+			if (input->PushKey(DIK_S))
+			{
+				transformSphere.translate.y -= 0.01f;
+			}
+
+			if (input->PushKey(DIK_A))
+			{
+				transformSphere.translate.x -= 0.01f;
+			}
+
+			if (input->PushKey(DIK_D))
+			{
+				transformSphere.translate.x += 0.01f;
+			}
 
 			// ImGuiの内部コマンドを生成する
 			ImGui::Render();
@@ -1907,6 +1943,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
 		debug->Release();
 	}
+
+	// 入力解放
+	delete input;
 
 	return 0;
 }
