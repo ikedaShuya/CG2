@@ -16,8 +16,12 @@ public: // メンバ変数
 	// 更新
 	void Update();
 
+	bool PushKey(BYTE keyNumber);
+
 private: // メンバ変数
 	// キーボードのデバイス
 	IDirectInputDevice8 *keyboard = nullptr;
+
+	BYTE key[256] = {};
 };
 

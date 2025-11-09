@@ -1741,25 +1741,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			input->Update();
 
 			// 数字の0キーが押されていたら
-			/*if (key[DIK_W]) 
+			if (input->PushKey(DIK_W)) 
 			{
 				transformSphere.translate.y += 0.01f;
 			}
 
-			if (key[DIK_S])
+			if (input->PushKey(DIK_S))
 			{
 				transformSphere.translate.y -= 0.01f;
 			}
 
-			if (key[DIK_A])
+			if (input->PushKey(DIK_A))
 			{
 				transformSphere.translate.x -= 0.01f;
 			}
 
-			if (key[DIK_D])
+			if (input->PushKey(DIK_D))
 			{
 				transformSphere.translate.x += 0.01f;
-			}*/
+			}
 
 			// ImGuiの内部コマンドを生成する
 			ImGui::Render();
