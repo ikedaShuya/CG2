@@ -1,5 +1,4 @@
 #include "WinApp.h"
-#include <cstdint>
 #include "externals/imgui/imgui.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

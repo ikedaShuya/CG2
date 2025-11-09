@@ -1,4 +1,3 @@
-#include <Windows.h>
 #include <cassert>
 #include <chrono>
 #include <d3d12.h>
