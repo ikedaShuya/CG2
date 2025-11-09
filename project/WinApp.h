@@ -28,6 +28,9 @@ public: // メンバ変数
 	// 終了
 	void Finalize();
 
+	// メッセージの処理
+	bool ProcessMessage();
+
 private:
 	// ウィンドウハンドル
 	HWND hwnd = nullptr;

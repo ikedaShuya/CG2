@@ -1586,15 +1586,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	input = new Input();
 	input->Initialize(winApp);
 
-	MSG msg {};
 	// ウィンドウの×ボタンが押されるまでループ
-	while (msg.message != WM_QUIT)
+	while (true)
 	{
-		// Windowにメッセージが来てたら最優先で処理させる
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		// Windowsのメッセージ処理
+		if (winApp->ProcessMessage())
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			// ゲームループを抜ける
+			break;
 		} else
 		{
 			// ゲーム処理
