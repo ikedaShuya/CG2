@@ -7,12 +7,14 @@
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
 
+#include "WinApp.h"
+
 // 入力
 class Input
 {
 public: // メンバ変数
 	// 初期化
-	void Initialize(HINSTANCE hInstance,HWND hwnd);
+	void Initialize(WinApp* winApp);
 	// 更新
 	void Update();
 
@@ -23,5 +25,8 @@ private: // メンバ変数
 	IDirectInputDevice8 *keyboard = nullptr;
 
 	BYTE key[256] = {};
+
+	// WindowsAPI
+	WinApp *winApp_ = nullptr;
 };
 
