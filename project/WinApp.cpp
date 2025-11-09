@@ -8,8 +8,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 
-	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) { 
-		return true; 
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+		return true;
 	}
 
 	// メッセージに応じてゲーム固有の処理を行う
@@ -27,9 +27,9 @@ LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 
 void WinApp::Initialize()
 {
-	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
+	CoInitializeEx(0, COINIT_MULTITHREADED);
 
-	WNDCLASS wc {};
+	
 	// ウィンドウプロシージャ
 	wc.lpfnWndProc = WindowProc;
 	// ウィンドウクラス名(なんでも良い)
@@ -42,9 +42,7 @@ void WinApp::Initialize()
 	// ウィンドウクラスを登録する
 	RegisterClass(&wc);
 
-	// クライアント領域のサイズ
-	const int32_t kClientWidth = 1280;
-	const int32_t kClientHeight = 720;
+
 
 	// ウィンドウサイズを表す構造体にクライアント領域を入れる
 	RECT wrc = { 0, 0, kClientWidth, kClientHeight };
@@ -53,7 +51,7 @@ void WinApp::Initialize()
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
 	// ウィンドウの生成
-	HWND hwnd = CreateWindow(wc.lpszClassName,    // 利用するクラス名
+	hwnd = CreateWindow(wc.lpszClassName,    // 利用するクラス名
 		L"CG2",              // タイトルバーの文字
 		WS_OVERLAPPEDWINDOW, // よく見るウィンドウスタイル
 		CW_USEDEFAULT,       // 表示X座標（Windowsに任せる）
