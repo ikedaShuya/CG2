@@ -1737,15 +1737,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 
-			// キーボード情報の取得開始
-			keyboard->Acquire();
-
-			// 全キーの入力状態を取得する
-			BYTE key[256] = {};
-			keyboard->GetDeviceState(sizeof(key), key);
+			// 入力の更新
+			input->Update();
 
 			// 数字の0キーが押されていたら
-			if (key[DIK_W]) 
+			/*if (key[DIK_W]) 
 			{
 				transformSphere.translate.y += 0.01f;
 			}
@@ -1763,7 +1759,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			if (key[DIK_D])
 			{
 				transformSphere.translate.x += 0.01f;
-			}
+			}*/
 
 			// ImGuiの内部コマンドを生成する
 			ImGui::Render();
