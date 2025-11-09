@@ -1,7 +1,6 @@
 #include <Windows.h>
 #include <cassert>
 #include <chrono>
-#include <cstdint>
 #include <d3d12.h>
 #include <dbghelp.h>
 #include <dxcapi.h>
@@ -16,11 +15,11 @@
 #include <vector>
 #include <sstream>
 #include "Input.h"
+#include "WinApp.h"
 
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
 
-#include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
 
@@ -30,7 +29,7 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "dxcompiler.lib")
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+
 
 struct Vector2
 {
@@ -209,26 +208,6 @@ std::string ConvertString(const std::wstring &str)
 	WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()),
 		result.data(), sizeNeeded, NULL, NULL);
 	return result;
-}
-
-// ウィンドウプロシージャ
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-
-	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) { return true; }
-
-	// メッセージに応じてゲーム固有の処理を行う
-	switch (msg)
-	{
-		// ウィンドウが破棄された
-		case WM_DESTROY:
-		// osに対して、アプリの終了を伝える
-		PostQuitMessage(0);
-		return 0;
-	}
-
-	// 標準のメッセージ処理を行う
-	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
 IDxcBlob *CompileShader
@@ -1000,8 +979,6 @@ ModelData LoadObjFile(const std::string &directoryPath, const std::string &filen
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 
-	CoInitializeEx(0, COINIT_MULTITHREADED);
-
 	SetUnhandledExceptionFilter(ExportDump);
 
 	// log出力用のフォルダ「logs」を作成
@@ -1022,7 +999,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	std::ofstream logStream(logFilePath);
 
 	
+	// ポインタ
+	WinApp *winApp = nullptr;
 
+	// WindowsAPIの初期化
+	winApp = new WinApp();
+	winApp->Initialize();
 	
 
 #ifdef _DEBUG
@@ -1913,6 +1895,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// 入力解放
 	delete input;
+
+	// WindowsAPI解放
+	delete winApp;
 
 	return 0;
 }
