@@ -25,6 +25,9 @@ public: // メンバ変数
 	// getter
 	HINSTANCE GetHInstance() const { return wc.hInstance; }
 
+	// 終了
+	void Finalize();
+
 private:
 	// ウィンドウハンドル
 	HWND hwnd = nullptr;

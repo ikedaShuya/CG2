@@ -1584,7 +1584,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// 入力の初期化
 	input = new Input();
-	input->Initialize(winApp->GetHInstance(), winApp->GetHwnd());
+	input->Initialize(winApp);
 
 	MSG msg {};
 	// ウィンドウの×ボタンが押されるまでループ
@@ -1848,7 +1848,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #ifdef _DEBUG
 	debugController->Release();
 #endif
-	CloseWindow(winApp->GetHwnd());
+	
+
+	// WindowsAPIの終了処理
+	winApp->Finalize();
 
 	graphicsPipelineState->Release();
 	signatureBlob->Release();
@@ -1881,7 +1884,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	indexResourceSprite->Release();
 	indexResourceSphere->Release();
 
-	CoUninitialize();
+	
 
 	// リソースリークチェック
 	IDXGIDebug1 *debug;
