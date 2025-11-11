@@ -19,9 +19,17 @@
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
 
+#ifdef USE_IMGUI
+#include "externals/imgui/imgui.h"
+#include "externals/imgui/imgui_impl_dx12.h"
+#include "externals/imgui/imgui_impl_win32.h"
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
+
 #pragma region math
 
-struct Vector3 {
+struct Vector3
+{
 	float x;
 	float y;
 	float z;
@@ -35,7 +43,8 @@ struct Vector4
 	float w;
 };
 
-struct Matrix4x4 {
+struct Matrix4x4
+{
 	float m[4][4];
 };
 
@@ -65,7 +74,8 @@ Matrix4x4 MakeIdentity4x4() {
 	return result;
 }
 
-struct Transform {
+struct Transform
+{
 	Vector3 scale;
 	Vector3 rotate;
 	Vector3 translate;
@@ -247,7 +257,7 @@ Matrix4x4 Multiply(const Matrix4x4 &m1, const Matrix4x4 &m2) {
 }
 
 // 3次元アフィン変換行列
-Matrix4x4 MakeAffineMatrix(const Vector3 &scale, const Vector3 &rotate,const Vector3 &translate) {
+Matrix4x4 MakeAffineMatrix(const Vector3 &scale, const Vector3 &rotate, const Vector3 &translate) {
 	Matrix4x4 result {};
 
 	Matrix4x4 scaleMatrix = MakeScaleMatrix(scale);
@@ -413,7 +423,7 @@ Matrix4x4 Inverse(const Matrix4x4 &m) {
 }
 
 // 透視投影行列
-Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio,float nearClip, float farClip) {
+Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip) {
 
 	Matrix4x4 result {};
 
@@ -461,6 +471,13 @@ std::string ConvertString(const std::wstring &str) {
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+
+#ifdef USE_IMGUI
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+		return true;
+	}
+#endif
+
 	// メッセージに応じてゲーム固有の処理を行う
 	switch (msg) {
 		// ウィンドウが破棄された
@@ -508,12 +525,12 @@ IDxcBlob *CompileShader(
 	IDxcUtils *dxcUtils,
 	IDxcCompiler3 *dxcCompiler,
 	IDxcIncludeHandler *includeHandler,
-	std::ostream& os)
+	std::ostream &os)
 {
 	//----hlslファイルを読み込む----
 
 	// これからシェーダーをコンパイルする旨をログに出す
-	Log(os,ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
+	Log(os, ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
 	// hlslファイルを読む
 	IDxcBlobEncoding *shaderSource = nullptr;
 	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
@@ -847,14 +864,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	* DescriptorHeapを生成する
 	**************************************************/
 
-	// ディスクリプタヒープの生成
-	ID3D12DescriptorHeap *rtvDescriptorHeap = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc {};
-	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // レンダーターゲットビュー用
-	rtvDescriptorHeapDesc.NumDescriptors = 2; // ダブルバッファ用に2つ。多くても別に構わない
-	hr = device->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap));
-	// ディスクリプタヒープが作れなかったので起動できない
-	assert(SUCCEEDED(hr));
+	// RTV用のヒープでディスクリプタの数は2。RTVはShder内で触るものではないので、ShaderVisibleはfalse
+	ID3D12DescriptorHeap *rtvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+
+	// SRV用のヒープでディスクリプタの数は128。SRVはShader内で触るものなので、ShaderVisibleはtrue
+	ID3D12DescriptorHeap *srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
 	/**************************************************
 	* SwapChainからResourceを引っ張ってくる
@@ -903,7 +917,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(fenceEvent != nullptr);
 
 #pragma endregion
-	
+
 #pragma region Shader Compile
 
 	// dxcCompilerを初期化
@@ -931,7 +945,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	//----RootParameter----
-	
+
 	// RootParameter作成。PixelShaderのMaterialとVertexShaderのTransform
 	D3D12_ROOT_PARAMETER rootParameters[2] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
@@ -1062,7 +1076,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 #pragma region Material用のResourceを作る
-	
+
 	// マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
 	ID3D12Resource *materialResource = CreateBufferResource(device, sizeof(Vector4));
 	// マテリアルにデータを書き込む
@@ -1119,6 +1133,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
+#pragma region ImGui初期化
+
+#ifdef USE_IMGUI
+	// ImGuiの初期化。詳細はさして重要ではないので解説は省略する
+	// こういうもんである
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX12_Init(device,
+		swapChainDesc.BufferCount,
+		rtvDesc.Format,
+		srvDescriptorHeap,
+		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+#endif
+
+#pragma endregion
+
 #pragma region メインループ
 
 	MSG msg {};
@@ -1131,6 +1164,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		} else {
 			// ゲームの処理
 
+		#ifdef USE_IMGUI
+			// フレームの開始
+			ImGui_ImplDX12_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+		#endif
+
+		#pragma region 三角形を動かそう
+
 			transform.rotate.y += 0.03f;
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
@@ -1138,6 +1180,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 			*wvpData = worldViewProjectionMatrix;
+
+		#pragma endregion
+
+		#ifdef USE_IMGUI
+			// 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
+			ImGui::ShowDemoWindow();
+		#endif
 
 		#pragma region 画面をクリアする
 
@@ -1188,7 +1237,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 			// 描画!（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
 			commandList->DrawInstanced(3, 1, 0, 0);
-			
+
+		#ifdef USE_IMGUI
+			// ImGuiの内部コマンドを生成する
+			ImGui::Render();
+		#endif
+
+		#pragma region ImGui描画
+
+			// 描画用のDescriptorHeapの設定
+			ID3D12DescriptorHeap *descriptorHeaps[] = { srvDescriptorHeap };
+			commandList->SetDescriptorHeaps(1, descriptorHeaps);
+
+		#ifdef USE_IMGUI
+			// 実際のcommandListのImGuiの描画コマンドを積む
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+		#endif
+
+		#pragma endregion
+
 			//----画面表示できるようにする----
 
 			// 画面に描く処理はすべて終わり、画面に映すので、状態を遷移
@@ -1248,7 +1315,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region Object解放
 
+#ifdef USE_IMGUI
+	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する。
+	// こういうもんである。初期化と逆順に行う
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+#endif
+
+	srvDescriptorHeap->Release();
+
 	materialResource->Release();
+
+	wvpResource->Release();
 
 	vertexResource->Release();
 	graphicsPipelineState->Release();
