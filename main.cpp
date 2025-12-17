@@ -1813,6 +1813,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	bool useLightingTriangle = false;
 	bool useLightingSphere = false;
 
+	bool showTriangle = true;
+	bool showSphere = true;
+	bool showSprite = true;
+
 #pragma endregion
 
 #pragma region メインループ
@@ -1845,6 +1849,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::Separator();
 
 			if (current == 0) {
+
+				ImGui::Checkbox("Show Triangle", &showTriangle);
+
 				// ===== Triangle =====
 				ImGui::Text("Transform");
 				ImGui::SliderFloat3("Scale", &transform.scale.x, 0.1f, 5.0f);
@@ -1870,8 +1877,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				ImGui::Text("CheckBox");
 				ImGui::Checkbox("enableLighting", &useLightingTriangle);
 				useLightingTriangle ? materialData->enableLighting = true : materialData->enableLighting = false;
-				
+
 			} else if (current == 1) {
+
+				ImGui::Checkbox("Show Sphere", &showSphere);
+
 				// ===== Sphere =====
 				ImGui::Text("Transform");
 				ImGui::SliderFloat3("Scale", &transformSphere.scale.x, 0.1f, 5.0f);
@@ -1902,6 +1912,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				ImGui::Checkbox("enableLighting", &useLightingSphere);
 				useLightingSphere ? materialDataSphere->enableLighting = true : materialDataSphere->enableLighting = false;
 			} else {
+
+				ImGui::Checkbox("Show Sprite", &showSprite);
+
 				// ===== Sprite =====
 				ImGui::Text("Transform");
 				ImGui::SliderFloat3("Scale", &transformSprite.scale.x, 0.1f, 5.0f);
@@ -2017,48 +2030,59 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		#pragma region 描画: 3D Object (Triangle)
 
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+			if (showTriangle) {
 
-			// 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけばいい
-			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			// マテリアルCBufferの場所を設定
-			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-			// wvp用のCBufferの場所を設定
-			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-			// SRVのDescriptorTableの先頭を設定。2はrootParameter[2]である。
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-			commandList->SetGraphicsRootConstantBufferView(3, resourceDirectionalLight->GetGPUVirtualAddress());
+				commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
 
-			// 描画!（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-			commandList->DrawInstanced(6, 1, 0, 0);
+				// 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけばいい
+				commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				// マテリアルCBufferの場所を設定
+				commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+				// wvp用のCBufferの場所を設定
+				commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+				// SRVのDescriptorTableの先頭を設定。2はrootParameter[2]である。
+				commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+				commandList->SetGraphicsRootConstantBufferView(3, resourceDirectionalLight->GetGPUVirtualAddress());
+
+				// 描画!（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
+				commandList->DrawInstanced(6, 1, 0, 0);
+
+			}
 
 		#pragma endregion
 
 		#pragma region 描画: 3D Object (Sphere)
 
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
-			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			if (showSphere) {
 
-			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSphere->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(1, wvpResourceSphere->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU2 : textureSrvHandleGPU);
-			commandList->SetGraphicsRootConstantBufferView(3, resourceDirectionalLightSphere->GetGPUVirtualAddress());
+				commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
+				commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			commandList->DrawInstanced(sphereVertexNum, 1, 0, 0);
+				commandList->SetGraphicsRootConstantBufferView(0, materialResourceSphere->GetGPUVirtualAddress());
+				commandList->SetGraphicsRootConstantBufferView(1, wvpResourceSphere->GetGPUVirtualAddress());
+				commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU2 : textureSrvHandleGPU);
+				commandList->SetGraphicsRootConstantBufferView(3, resourceDirectionalLightSphere->GetGPUVirtualAddress());
+
+				commandList->DrawInstanced(sphereVertexNum, 1, 0, 0);
+			}
 
 		#pragma endregion
 
 		#pragma region 描画: 2D Object (Sprite)
 
-			// Spriteの描画。変更が必要なものだけ変更する
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
+			if (showSprite) {
 
-			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-			// TransformationMatrixCBufferの場所を設定
-			commandList->SetGraphicsRootConstantBufferView(1, wvpResourceSprite->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-			//描画!(DrawCall/ドローコール)
-			commandList->DrawInstanced(6, 1, 0, 0);
+				// Spriteの描画。変更が必要なものだけ変更する
+				commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite); // VBVを設定
+
+				commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+				// TransformationMatrixCBufferの場所を設定
+				commandList->SetGraphicsRootConstantBufferView(1, wvpResourceSprite->GetGPUVirtualAddress());
+				commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+				//描画!(DrawCall/ドローコール)
+				commandList->DrawInstanced(6, 1, 0, 0);
+
+			}
 
 		#pragma endregion
 
