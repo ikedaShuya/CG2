@@ -16,6 +16,8 @@
 #include <numbers>
 #include <wrl.h>
 #include <xaudio2.h>
+#define DIRECTINPUT_VERSION 0x0800 // DirectInputのバージョン指定
+#include <dinput.h>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -23,6 +25,7 @@
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib,"xaudio2.lib")
+#pragma comment(lib,"dinput8.lib")
 
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -1308,25 +1311,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
-#pragma region 音楽
-
-	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
-	IXAudio2MasteringVoice* masterVoice;
-
-	// XAudioエンジンのインスタンスを生成
-	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
-
-	// マスターボイスを生成
-	result = xAudio2->CreateMasteringVoice(&masterVoice);
-
-	// 音声読み込み
-	SoundData soundData1 = SoundLoadWave("resources/Alarm02.wav");
-
-	// 音楽再生
-	SoundPlayWave(xAudio2.Get(), soundData1);
-
-#pragma endregion
-
 #pragma region 画面の色を変える
 
 	/**************************************************
@@ -1420,6 +1404,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rtvHandles[1].ptr = rtvHandles[0].ptr + device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	// 2つ目を作る
 	device->CreateRenderTargetView(swapChainResources[1].Get(), &rtvDesc, rtvHandles[1]);
+
+#pragma endregion
+
+#pragma region 音楽
+
+	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
+	IXAudio2MasteringVoice* masterVoice;
+
+	// XAudioエンジンのインスタンスを生成
+	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
+
+	// マスターボイスを生成
+	result = xAudio2->CreateMasteringVoice(&masterVoice);
+
+	// 音声読み込み
+	SoundData soundData1 = SoundLoadWave("resources/Alarm02.wav");
+
+	// 音楽再生
+	SoundPlayWave(xAudio2.Get(), soundData1);
+
+#pragma endregion
+
+#pragma region 入力デバイス
+
+	// DirectInputの初期化
+	IDirectInput8* directInput = nullptr;
+	result = DirectInput8Create(
+		wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
+		(void**)&directInput, nullptr);
+	assert(SUCCEEDED(result));
+
+	// キーボードデバイスの生成
+	IDirectInputDevice8* keyboard = nullptr;
+	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+	assert(SUCCEEDED(result));
+
+	// 入力データ形式のセット
+	result = keyboard->SetDataFormat(&c_dfDIKeyboard); // 標準形式
+	assert(SUCCEEDED(result));
+
+	// 排他制御レベルのセット
+	result = keyboard->SetCooperativeLevel(
+		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	assert(SUCCEEDED(result));
 
 #pragma endregion
 
@@ -1694,7 +1722,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	**************************************************/
 
 	// Transform変数を作る
-	Transform transform { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	Transform transform { {1.0f,1.0f,1.0f},{0.0f,3.14f,0.0f},{0.0f,0.0f,0.0f} };
 
 	// camera変数を作る
 	Transform cameraTransform { {1.0f, 1.0f, 1.0f},{0.0f, 0.0f, 0.0f},{0.0f,0.0f,-10.0f} };
@@ -2197,6 +2225,43 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		} else {
 			// ゲームの処理
 
+			// キーボード情報の取得開始
+			keyboard->Acquire();
+
+			// 全キーの入力状態を取得する
+			BYTE key[256] = {};
+			keyboard->GetDeviceState(sizeof(key), key);
+
+			if (key[DIK_W])
+			{
+				transform.translate.y += 0.01f;
+			}
+
+			if (key[DIK_S])
+			{
+				transform.translate.y -= 0.01f;
+			}
+
+			if (key[DIK_A])
+			{
+				transform.translate.x -= 0.01f;
+			}
+
+			if (key[DIK_D])
+			{
+				transform.translate.x += 0.01f;
+			}
+
+			if (key[DIK_Q])
+			{
+				transform.rotate.y -= 0.01f;
+			}
+
+			if (key[DIK_E])
+			{
+				transform.rotate.y += 0.01f;
+			}
+			
 		#ifdef USE_IMGUI
 			// フレームの開始
 			ImGui_ImplDX12_NewFrame();
