@@ -1,5 +1,51 @@
-﻿################################################################################
-# この .gitignore ファイルは Microsoft(R) Visual Studio によって自動的に作成されました。
-################################################################################
+﻿############################################
+# Visual Studio / C++ Project (Clean)
+############################################
 
-/.vs
+# --- User / IDE files ---
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# --- Build output (IMPORTANT) ---
+# ビルド成果物はすべてここに集約
+generated/
+
+# --- Debug / Release (保険) ---
+Debug/
+Release/
+x64/
+x86/
+
+# --- Visual Studio cache ---
+ipch/
+*.VC.db
+*.VC.opendb
+
+# --- Build temporary files ---
+*.pdb
+*.ilk
+*.pch
+*.log
+*.tmp
+
+# ※ .obj は除外しない（3Dモデル用）
+
+# --- DirectX / Shader ---
+**/DirectXTex/Shaders/Compiled/
+
+# --- NuGet ---
+packages/
+*.nupkg
+*.snupkg
+
+# --- Others ---
+*.db
+*.opendb
+*.cache
+
+############################################
+# End
+############################################
