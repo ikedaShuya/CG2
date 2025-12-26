@@ -10,13 +10,11 @@
 *.sln.docstates
 
 # --- Build output (IMPORTANT) ---
-generated/
-
-# --- Debug / Release (保険) ---
 Debug/
 Release/
 x64/
 x86/
+generated/
 
 # --- Visual Studio cache ---
 ipch/
@@ -29,8 +27,21 @@ ipch/
 *.pch
 *.log
 *.tmp
+*.iobj
+*.ipdb
 
-# ※ .obj は除外しない（3Dモデル用）
+# --- Executables / Libraries ---
+*.exe
+*.dll
+*.lib
+*.exp
+
+# --- Object files ---
+# 基本は除外
+*.obj
+
+# ただし 3Dモデル用 .obj は含める
+!resources/**/*.obj
 
 # --- DirectX / Shader ---
 **/DirectXTex/Shaders/Compiled/
@@ -40,12 +51,16 @@ packages/
 *.nupkg
 *.snupkg
 
-# --- Others ---
+# --- ImGui ---
+imgui.ini
+
+# --- Logs ---
+logs/
+
+# --- Database / Cache ---
 *.db
 *.opendb
 *.cache
-imgui.ini
-logs/
 
 ############################################
 # End
