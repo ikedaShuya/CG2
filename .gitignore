@@ -10,7 +10,6 @@
 *.sln.docstates
 
 # --- Build output (IMPORTANT) ---
-# ビルド成果物はすべてここに集約
 generated/
 
 # --- Debug / Release (保険) ---
@@ -45,6 +44,8 @@ packages/
 *.db
 *.opendb
 *.cache
+imgui.ini
+logs/
 
 ############################################
 # End
