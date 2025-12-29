@@ -12,7 +12,7 @@
 # --- Build output (IMPORTANT) ---
 Debug/
 Release/
-x64/
+/x64/
 x86/
 generated/
 
@@ -37,25 +37,20 @@ ipch/
 *.exp
 
 # --- Object files ---
-# 基本は除外
 *.obj
-
-# ただし 3Dモデル用 .obj は含める
 !resources/**/*.obj
 
 # --- DirectX / Shader ---
+DirectXTex/Bin/
+DirectXTex/x64/
 **/DirectXTex/Shaders/Compiled/
-
-# --- NuGet ---
-packages/
-*.nupkg
-*.snupkg
 
 # --- ImGui ---
 imgui.ini
 
-# --- Logs ---
+# --- Logs / Dumps ---
 logs/
+Dumps/
 
 # --- Database / Cache ---
 *.db
