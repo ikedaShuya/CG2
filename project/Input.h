@@ -12,6 +12,7 @@ public:
 	// namespace省略
 	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
+
 public: // メンバ変数
 	// 初期化
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
