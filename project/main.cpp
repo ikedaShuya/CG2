@@ -16,8 +16,6 @@
 #include <numbers>
 #include <wrl.h>
 #include <xaudio2.h>
-#define DIRECTINPUT_VERSION 0x0800 // DirectInputのバージョン指定
-#include <dinput.h>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -25,7 +23,6 @@
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib,"xaudio2.lib")
-#pragma comment(lib,"dinput8.lib")
 
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -39,6 +36,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "externals/DirectXTex/d3dx12.h"
 
 #include "Math.h"
+
+#include "Input.h"
 
 using namespace Math;
 
@@ -988,26 +987,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region 入力デバイス
 
-	// DirectInputの初期化
-	IDirectInput8* directInput = nullptr;
-	result = DirectInput8Create(
-		wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
-		(void**)&directInput, nullptr);
-	assert(SUCCEEDED(result));
+	// ポインタ
+	Input* input = nullptr;
 
-	// キーボードデバイスの生成
-	IDirectInputDevice8* keyboard = nullptr;
-	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-	assert(SUCCEEDED(result));
-
-	// 入力データ形式のセット
-	result = keyboard->SetDataFormat(&c_dfDIKeyboard); // 標準形式
-	assert(SUCCEEDED(result));
-
-	// 排他制御レベルのセット
-	result = keyboard->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(result));
+	// 入力の初期化
+	input = new Input();
+	input->Initialize(wc.hInstance, hwnd);
 
 #pragma endregion
 
@@ -1785,14 +1770,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		} else {
 			// ゲームの処理
 
-			// キーボード情報の取得開始
-			keyboard->Acquire();
+			// 入力の更新
+			input->Update();
 
-			// 全キーの入力状態を取得する
-			BYTE key[256] = {};
-			keyboard->GetDeviceState(sizeof(key), key);
-
-			if (key[DIK_W])
+			/*if (key[DIK_W])
 			{
 				transform.translate.y += 0.01f;
 			}
@@ -1820,7 +1801,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (key[DIK_E])
 			{
 				transform.rotate.y += 0.01f;
-			}
+			}*/
 			
 		#ifdef USE_IMGUI
 			// フレームの開始
@@ -2207,12 +2188,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 	}
 
+#pragma endregion
+
 	// XAudio2解放
 	xAudio2.Reset();
 	// 音声データ解放
 	SoundUnload(&soundData1);
 
-#pragma endregion
+	// 入力解放
+	delete input;
 
 #pragma region Object解放
 
