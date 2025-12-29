@@ -101,7 +101,7 @@ SoundData SoundLoadWave(const char* filename)
 	assert(file.is_open());
 
 	//----.wavデータを読み込み----
-	
+
 	// RIFFヘッダーの読み込み
 	RiffHeader riff;
 	file.read((char*)&riff, sizeof(riff));
@@ -146,10 +146,10 @@ SoundData SoundLoadWave(const char* filename)
 	file.read(pBuffer, data.size);
 
 	//----ファイルクローズ----
-	
+
 	// Waveファイルを閉じる
 	file.close();
-	
+
 	//----読み込んだ音声データをreturn----
 
 	// returnする為の音声データ
@@ -1773,36 +1773,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			// 入力の更新
 			input->Update();
 
-			/*if (key[DIK_W])
+			if (input->PushKey(DIK_W))
 			{
 				transform.translate.y += 0.01f;
 			}
 
-			if (key[DIK_S])
+			if (input->PushKey(DIK_S))
 			{
 				transform.translate.y -= 0.01f;
 			}
 
-			if (key[DIK_A])
+			if (input->PushKey(DIK_A))
 			{
 				transform.translate.x -= 0.01f;
 			}
 
-			if (key[DIK_D])
+			if (input->PushKey(DIK_D))
 			{
 				transform.translate.x += 0.01f;
 			}
 
-			if (key[DIK_Q])
+			if (input->PushKey(DIK_Q))
 			{
 				transform.rotate.y -= 0.01f;
 			}
 
-			if (key[DIK_E])
+			if (input->PushKey(DIK_E))
 			{
 				transform.rotate.y += 0.01f;
-			}*/
-			
+			}
+
 		#ifdef USE_IMGUI
 			// フレームの開始
 			ImGui_ImplDX12_NewFrame();
