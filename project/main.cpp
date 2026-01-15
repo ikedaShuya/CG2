@@ -957,7 +957,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// 入力の初期化
 	input = new Input();
-	input->Initialize(winApp->GetHInstance(), winApp->GetHwnd());
+	input->Initialize(winApp);
 
 #pragma endregion
 
@@ -2155,18 +2155,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
-	// XAudio2解放
-	xAudio2.Reset();
-	// 音声データ解放
-	SoundUnload(&soundData1);
-
-	// 入力解放
-	delete input;
-
-	// WindowsAPI解放
-	delete winApp;
-
 #pragma region Object解放
+
+	// WindowsAPIの終了処理
+	winApp->Finalize();
 
 #ifdef USE_IMGUI
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する。
@@ -2177,11 +2169,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #endif
 
 	CloseHandle(fenceEvent);
-	CloseWindow(winApp->GetHwnd());
+
+	// 入力解放
+	delete input;
+	input = nullptr;
+
+	// XAudio2解放
+	xAudio2.Reset();
+	// 音声データ解放
+	SoundUnload(&soundData1);
+
+	// WindowsAPI解放
+	delete winApp;
+	winApp = nullptr;
 
 #pragma endregion
-
-	CoUninitialize();
 
 	return 0;
 }
