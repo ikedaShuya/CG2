@@ -8,7 +8,6 @@ class WinApp
 public: // 性的メンバ変数
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-
 public: // 定数
 	// クライアント領域のサイズ
 	static const int32_t kClientWidth = 1280;
@@ -28,6 +27,9 @@ public: // メンバ変数
 
 	// 終了
 	void Finalize();
+
+	// メッセージの処理
+	bool ProcessMessage();
 
 private:
 	// ウィンドウハンドル
