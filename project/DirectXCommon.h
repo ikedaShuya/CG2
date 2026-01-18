@@ -84,6 +84,11 @@ public: // メンバ関数
 	// ImGuiの初期化
 	void InitializeImGui();
 
+	// 描画前処理
+	void PreDraw();
+	// 描画後処理
+	void PostDraw();
+
 private:
 	// DirectX12デバイス
 	Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
@@ -100,8 +105,6 @@ private:
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc {};
 	// WindowsAPI
 	WinApp *winApp = nullptr;
-	// Resourceの生成
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
 	// Descriptorサイズ
 	uint32_t descriptorSizeSRV;
 	uint32_t descriptorSizeRTV;
@@ -130,6 +133,7 @@ private:
 
 	// 初期値0でFenceを作る
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
+	// フェンス値
 	uint64_t fenceValue = 0;
 	HANDLE fenceEvent;
 	// ビューポート
@@ -141,4 +145,6 @@ private:
 	IDxcCompiler3 *dxcCompiler = nullptr;
 	// 現時点でincludeはしないが、includeに対応するための設定を行っておく
 	IDxcIncludeHandler *includeHandler = nullptr;
+	// TransitionBarrierの設定
+	D3D12_RESOURCE_BARRIER barrier {};
 };

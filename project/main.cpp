@@ -22,12 +22,12 @@
 #pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib,"xaudio2.lib")
 
- #ifdef USE_IMGUI
- #include "externals/imgui/imgui.h"
- #include "externals/imgui/imgui_impl_dx12.h"
- #include "externals/imgui/imgui_impl_win32.h"
- extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
- #endif
+#ifdef USE_IMGUI
+#include "externals/imgui/imgui.h"
+#include "externals/imgui/imgui_impl_dx12.h"
+#include "externals/imgui/imgui_impl_win32.h"
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
@@ -80,12 +80,12 @@ struct SoundData
 	// 波形フォーマット
 	WAVEFORMATEX wfex;
 	// バッファの先頭アドレス
-	BYTE* pBuffer;
+	BYTE *pBuffer;
 	// バッファのサイズ
 	unsigned int bufferSize;
 };
 
-SoundData SoundLoadWave(const char* filename)
+SoundData SoundLoadWave(const char *filename)
 {
 
 	//----ファイルオープン----
@@ -101,7 +101,7 @@ SoundData SoundLoadWave(const char* filename)
 
 	// RIFFヘッダーの読み込み
 	RiffHeader riff;
-	file.read((char*)&riff, sizeof(riff));
+	file.read((char *)&riff, sizeof(riff));
 	// ファイルがRIFFかチェック
 	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) {
 		assert(0);
@@ -114,24 +114,24 @@ SoundData SoundLoadWave(const char* filename)
 	// Formatチャンクの読み込み
 	FormatChunk format = {};
 	// チャンクヘッダーの確認
-	file.read((char*)&format, sizeof(ChunkHeader));
+	file.read((char *)&format, sizeof(ChunkHeader));
 	if (strncmp(format.chunk.id, "fmt ", 4) != 0) {
 		assert(0);
 	}
 
 	// チャンク本体の読み込み
 	assert(format.chunk.size <= sizeof(format.fmt));
-	file.read((char*)&format.fmt, format.chunk.size);
+	file.read((char *)&format.fmt, format.chunk.size);
 
 	// Dataチャンクの読み込み
 	ChunkHeader data;
-	file.read((char*)&data, sizeof(data));
+	file.read((char *)&data, sizeof(data));
 	// JUNKチャンクを検出した場合
 	if (strncmp(data.id, "JUNK", 4) == 0) {
 		// 読み取り位置をJUNKチャンクの終わりまで進める
 		file.seekg(data.size, std::ios_base::cur);
 		// 再読み込み
-		file.read((char*)&data, sizeof(data));
+		file.read((char *)&data, sizeof(data));
 	}
 
 	if (strncmp(data.id, "data", 4) != 0) {
@@ -139,7 +139,7 @@ SoundData SoundLoadWave(const char* filename)
 	}
 
 	// Dataチャンクのデータ部（波形データ）の読み込み
-	char* pBuffer = new char[data.size];
+	char *pBuffer = new char[data.size];
 	file.read(pBuffer, data.size);
 
 	//----ファイルクローズ----
@@ -153,14 +153,14 @@ SoundData SoundLoadWave(const char* filename)
 	SoundData soundData = {};
 
 	soundData.wfex = format.fmt;
-	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
+	soundData.pBuffer = reinterpret_cast<BYTE *>(pBuffer);
 	soundData.bufferSize = data.size;
 
 	return soundData;
 }
 
 // 音声データを解放
-void SoundUnload(SoundData* soundData)
+void SoundUnload(SoundData *soundData)
 {
 	// バッファのメモリを解放
 	delete[] soundData->pBuffer;
@@ -171,12 +171,12 @@ void SoundUnload(SoundData* soundData)
 }
 
 // 音楽再生
-void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
+void SoundPlayWave(IXAudio2 *xAudio2, const SoundData &soundData) {
 
 	HRESULT result;
 
 	// 波形フォーマットを元にSourceVoiceの生成
-	IXAudio2SourceVoice* pSourceVoice = nullptr;
+	IXAudio2SourceVoice *pSourceVoice = nullptr;
 	result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
 	assert(SUCCEEDED(result));
 
@@ -296,21 +296,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 // CompileShader
 Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 	// CompilerするShaderファイルへのパス
-	const std::wstring& filePath,
+	const std::wstring &filePath,
 	// Compilerに使用するProfile
-	const wchar_t* profile,
+	const wchar_t *profile,
 	// 初期化で生成したものを3つ
-	const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
-	const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
-	const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler,
-	std::ostream& os)
+	const Microsoft::WRL::ComPtr<IDxcUtils> &dxcUtils,
+	const Microsoft::WRL::ComPtr<IDxcCompiler3> &dxcCompiler,
+	const Microsoft::WRL::ComPtr<IDxcIncludeHandler> &includeHandler,
+	std::ostream &os)
 {
 	//----hlslファイルを読み込む----
 
 	// これからシェーダーをコンパイルする旨をログに出す
 	//Log(os, ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
 	// hlslファイルを読む
-	IDxcBlobEncoding* shaderSource = nullptr;
+	IDxcBlobEncoding *shaderSource = nullptr;
 	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
 	// 読めなかったら止める
 	assert(SUCCEEDED(hr));
@@ -331,7 +331,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 		L"-Zpr",   // メモリレイアウトは行優先
 	};
 	// 実際にShaderをコンパイルする
-	IDxcResult* shaderResult = nullptr;
+	IDxcResult *shaderResult = nullptr;
 	hr = dxcCompiler->Compile(
 		&shaderSourceBuffer,    // 読み込んだファイル
 		arguments,              // コンパイルオプション
@@ -373,7 +373,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 #pragma region TextureResources
 
 // Resource作成の関数
-Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, size_t sizeInBytes) {
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device> &device, size_t sizeInBytes) {
 
 	// 頂点リソース用のヒープの設定
 	D3D12_HEAP_PROPERTIES uploadHeapProperties {};
@@ -419,7 +419,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL
 //}
 
 // DirectX12のTextureResourceを作る
-Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, const DirectX::TexMetadata& metadata)
+Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device> &device, const DirectX::TexMetadata &metadata)
 {
 	// metadataを基にResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc {};
@@ -474,7 +474,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const Microsoft::WR
 
 #pragma region AssetLoading
 
-MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename)
+MaterialData LoadMaterialTemplateFile(const std::string &directoryPath, const std::string &filename)
 {
 	//----中で必要となる変数の宣言----
 	MaterialData materialData; // 構築するMaterialData
@@ -503,7 +503,7 @@ MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const st
 	return materialData;
 }
 
-ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename)
+ModelData LoadObjFile(const std::string &directoryPath, const std::string &filename)
 {
 	//----必要な変数宣言----
 	ModelData modelData; // 構築するModelData
@@ -609,7 +609,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region ウィンドウを作ろう
 
 	// ポインタ
-	WinApp* winApp = nullptr;
+	WinApp *winApp = nullptr;
 
 	// WindowsAPIの初期化
 	winApp = new WinApp();
@@ -620,7 +620,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3DResourceLeakChecker leakCheck;
 
 	// ポインタ
-	DirectXCommon* dxCommon = nullptr;
+	DirectXCommon *dxCommon = nullptr;
 
 	// DirectXの初期化
 	dxCommon = new DirectXCommon();
@@ -629,7 +629,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region 音楽
 
 	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
-	IXAudio2MasteringVoice* masterVoice;
+	IXAudio2MasteringVoice *masterVoice;
 
 	// XAudioエンジンのインスタンスを生成
 	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
@@ -648,7 +648,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region 入力デバイス
 
 	// ポインタ
-	Input* input = nullptr;
+	Input *input = nullptr;
 
 	// 入力の初期化
 	input = new Input();
@@ -1378,179 +1378,179 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::NewFrame();
 	#endif
 
-	//#ifdef USE_IMGUI
-	//	ImGui::Begin("Settings");
+		//#ifdef USE_IMGUI
+		//	ImGui::Begin("Settings");
 
-	//	// 対象選択
-	//	static int current = 0;
-	//	const char* targets[] = { "ModelData","Sphere", "Sprite","Triangle" };
-	//	ImGui::Combo("Target", &current, targets, IM_ARRAYSIZE(targets));
+		//	// 対象選択
+		//	static int current = 0;
+		//	const char* targets[] = { "ModelData","Sphere", "Sprite","Triangle" };
+		//	ImGui::Combo("Target", &current, targets, IM_ARRAYSIZE(targets));
 
-	//	ImGui::Separator();
+		//	ImGui::Separator();
 
-	//	if (current == 0) {
+		//	if (current == 0) {
 
-	//		ImGui::Checkbox("Show ModelData", &showModelData);
+		//		ImGui::Checkbox("Show ModelData", &showModelData);
 
-	//		ImGui::Separator();
-	//		ImGui::InputFloat3("CameraTranslate", &cameraTransform.translate.x);
-	//		ImGui::SliderAngle("CameraRotateX", &cameraTransform.rotate.x);
-	//		ImGui::SliderAngle("CameraRotateY", &cameraTransform.rotate.y);
-	//		ImGui::SliderAngle("CameraRotateZ", &cameraTransform.rotate.z);
-	//		ImGui::SliderAngle("RotateX", &transform.rotate.x);
-	//		ImGui::SliderAngle("RotateY", &transform.rotate.y);
-	//		ImGui::SliderAngle("RotateZ", &transform.rotate.z);
-	//		ImGui::Separator();
-	//		ImGui::ColorEdit3("Color", &materialData->color.x);
-	//		ImGui::Separator();
-	//		ImGui::Checkbox("enableLighting", &useLighting);
-	//		useLighting ? materialData->enableLighting = true : materialData->enableLighting = false;
-	//		ImGui::Separator();
-	//		ImGui::ColorEdit3("Light Color", &directionalLightData->color.x);
-	//		ImGui::SliderFloat3("Light Direction", &directionalLightData->direction.x, -1.0f, 1.0f);
-	//		ImGui::SliderFloat("Light Intensity", &directionalLightData->intensity, 0.0f, 5.0f);
+		//		ImGui::Separator();
+		//		ImGui::InputFloat3("CameraTranslate", &cameraTransform.translate.x);
+		//		ImGui::SliderAngle("CameraRotateX", &cameraTransform.rotate.x);
+		//		ImGui::SliderAngle("CameraRotateY", &cameraTransform.rotate.y);
+		//		ImGui::SliderAngle("CameraRotateZ", &cameraTransform.rotate.z);
+		//		ImGui::SliderAngle("RotateX", &transform.rotate.x);
+		//		ImGui::SliderAngle("RotateY", &transform.rotate.y);
+		//		ImGui::SliderAngle("RotateZ", &transform.rotate.z);
+		//		ImGui::Separator();
+		//		ImGui::ColorEdit3("Color", &materialData->color.x);
+		//		ImGui::Separator();
+		//		ImGui::Checkbox("enableLighting", &useLighting);
+		//		useLighting ? materialData->enableLighting = true : materialData->enableLighting = false;
+		//		ImGui::Separator();
+		//		ImGui::ColorEdit3("Light Color", &directionalLightData->color.x);
+		//		ImGui::SliderFloat3("Light Direction", &directionalLightData->direction.x, -1.0f, 1.0f);
+		//		ImGui::SliderFloat("Light Intensity", &directionalLightData->intensity, 0.0f, 5.0f);
 
-	//	} else if (current == 1) {
+		//	} else if (current == 1) {
 
-	//		ImGui::Checkbox("Show Sphere", &showSphere);
+		//		ImGui::Checkbox("Show Sphere", &showSphere);
 
-	//		// ===== Sphere =====
-	//		ImGui::Text("Transform");
-	//		ImGui::SliderFloat3("Scale", &transformSphere.scale.x, 0.1f, 5.0f);
-	//		ImGui::SliderFloat3("Rotate", &transformSphere.rotate.x, -3.14f, 3.14f);
-	//		ImGui::SliderFloat3("Translate", &transformSphere.translate.x, -5.0f, 5.0f);
-	//		if (ImGui::Button("Reset transformSphere")) {
-	//			transformSphere = transformSphereInit;
-	//		}
+		//		// ===== Sphere =====
+		//		ImGui::Text("Transform");
+		//		ImGui::SliderFloat3("Scale", &transformSphere.scale.x, 0.1f, 5.0f);
+		//		ImGui::SliderFloat3("Rotate", &transformSphere.rotate.x, -3.14f, 3.14f);
+		//		ImGui::SliderFloat3("Translate", &transformSphere.translate.x, -5.0f, 5.0f);
+		//		if (ImGui::Button("Reset transformSphere")) {
+		//			transformSphere = transformSphereInit;
+		//		}
 
-	//		// ===== Material =====
-	//		ImGui::Separator();
-	//		ImGui::Text("Material");
-	//		ImGui::ColorEdit3("Color", &materialDataSphere->color.x);
+		//		// ===== Material =====
+		//		ImGui::Separator();
+		//		ImGui::Text("Material");
+		//		ImGui::ColorEdit3("Color", &materialDataSphere->color.x);
 
-	//		ImGui::Separator();
-	//		ImGui::Text("Camera");
-	//		ImGui::SliderFloat3("Camera Position", &cameraTransformSphere.translate.x, -20.0f, 20.0f);
+		//		ImGui::Separator();
+		//		ImGui::Text("Camera");
+		//		ImGui::SliderFloat3("Camera Position", &cameraTransformSphere.translate.x, -20.0f, 20.0f);
 
-	//		ImGui::Separator();
-	//		ImGui::Text("Directional Light");
-	//		ImGui::ColorEdit3("Light Color", &directionalLightDataSphere->color.x);
-	//		ImGui::SliderFloat3("Light Direction", &directionalLightDataSphere->direction.x, -1.0f, 1.0f);
-	//		ImGui::SliderFloat("Light Intensity", &directionalLightDataSphere->intensity, 0.0f, 5.0f);
+		//		ImGui::Separator();
+		//		ImGui::Text("Directional Light");
+		//		ImGui::ColorEdit3("Light Color", &directionalLightDataSphere->color.x);
+		//		ImGui::SliderFloat3("Light Direction", &directionalLightDataSphere->direction.x, -1.0f, 1.0f);
+		//		ImGui::SliderFloat("Light Intensity", &directionalLightDataSphere->intensity, 0.0f, 5.0f);
 
-	//		ImGui::Separator();
-	//		ImGui::Text("CheckBox");
-	//		ImGui::Checkbox("enableLighting", &useLightingSphere);
-	//		useLightingSphere ? materialDataSphere->enableLighting = true : materialDataSphere->enableLighting = false;
-	//	} else if (current == 2) {
+		//		ImGui::Separator();
+		//		ImGui::Text("CheckBox");
+		//		ImGui::Checkbox("enableLighting", &useLightingSphere);
+		//		useLightingSphere ? materialDataSphere->enableLighting = true : materialDataSphere->enableLighting = false;
+		//	} else if (current == 2) {
 
-	//		ImGui::Checkbox("Show Sprite", &showSprite);
+		//		ImGui::Checkbox("Show Sprite", &showSprite);
 
-	//		// ===== Sprite =====
-	//		ImGui::Text("Transform");
-	//		ImGui::SliderFloat3("Scale", &transformSprite.scale.x, 0.1f, 5.0f);
-	//		ImGui::SliderFloat3("Rotate", &transformSprite.rotate.x, -3.14f, 3.14f);
-	//		ImGui::SliderFloat3("Translate", &transformSprite.translate.x, -640.0f, 640.0f);
+		//		// ===== Sprite =====
+		//		ImGui::Text("Transform");
+		//		ImGui::SliderFloat3("Scale", &transformSprite.scale.x, 0.1f, 5.0f);
+		//		ImGui::SliderFloat3("Rotate", &transformSprite.rotate.x, -3.14f, 3.14f);
+		//		ImGui::SliderFloat3("Translate", &transformSprite.translate.x, -640.0f, 640.0f);
 
-	//		// ===== Material =====
-	//		ImGui::Separator();
-	//		ImGui::Text("Material");
-	//		ImGui::ColorEdit3("Color", &materialDataSprite->color.x);
+		//		// ===== Material =====
+		//		ImGui::Separator();
+		//		ImGui::Text("Material");
+		//		ImGui::ColorEdit3("Color", &materialDataSprite->color.x);
 
-	//		ImGui::Separator();
-	//		ImGui::Text("UVTransform");
-	//		ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
-	//		ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-	//		ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
-	//	} else {
+		//		ImGui::Separator();
+		//		ImGui::Text("UVTransform");
+		//		ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
+		//		ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+		//		ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+		//	} else {
 
-	//		ImGui::Checkbox("Show Triangle", &showTriangle);
+		//		ImGui::Checkbox("Show Triangle", &showTriangle);
 
-	//		// ===== Triangle =====
-	//		ImGui::Text("Transform");
-	//		ImGui::SliderFloat3("Scale", &transformTriangle.scale.x, 0.1f, 5.0f);
-	//		ImGui::SliderFloat3("Rotate", &transformTriangle.rotate.x, -3.14f, 3.14f);
-	//		ImGui::SliderFloat3("Translate", &transformTriangle.translate.x, -5.0f, 5.0f);
+		//		// ===== Triangle =====
+		//		ImGui::Text("Transform");
+		//		ImGui::SliderFloat3("Scale", &transformTriangle.scale.x, 0.1f, 5.0f);
+		//		ImGui::SliderFloat3("Rotate", &transformTriangle.rotate.x, -3.14f, 3.14f);
+		//		ImGui::SliderFloat3("Translate", &transformTriangle.translate.x, -5.0f, 5.0f);
 
-	//		// ===== Material =====
-	//		ImGui::Separator();
-	//		ImGui::Text("Material");
-	//		ImGui::ColorEdit3("Color", &materialDataTriangle->color.x);
+		//		// ===== Material =====
+		//		ImGui::Separator();
+		//		ImGui::Text("Material");
+		//		ImGui::ColorEdit3("Color", &materialDataTriangle->color.x);
 
-	//		ImGui::Separator();
-	//		ImGui::Text("Camera");
-	//		ImGui::SliderFloat3("Camera Position", &cameraTransformTriangle.translate.x, -10.0f, 10.0f);
+		//		ImGui::Separator();
+		//		ImGui::Text("Camera");
+		//		ImGui::SliderFloat3("Camera Position", &cameraTransformTriangle.translate.x, -10.0f, 10.0f);
 
-	//		ImGui::Separator();
-	//		ImGui::Text("Directional Light");
-	//		ImGui::ColorEdit3("Light Color", &directionalLightDataTriangle->color.x);
-	//		ImGui::SliderFloat3("Light Direction", &directionalLightDataTriangle->direction.x, -1.0f, 1.0f);
-	//		ImGui::SliderFloat("Light Intensity", &directionalLightDataTriangle->intensity, 0.0f, 5.0f);
+		//		ImGui::Separator();
+		//		ImGui::Text("Directional Light");
+		//		ImGui::ColorEdit3("Light Color", &directionalLightDataTriangle->color.x);
+		//		ImGui::SliderFloat3("Light Direction", &directionalLightDataTriangle->direction.x, -1.0f, 1.0f);
+		//		ImGui::SliderFloat("Light Intensity", &directionalLightDataTriangle->intensity, 0.0f, 5.0f);
 
-	//		ImGui::Separator();
-	//		ImGui::Text("CheckBox");
-	//		ImGui::Checkbox("enableLighting", &useLightingTriangle);
-	//		useLightingTriangle ? materialDataTriangle->enableLighting = true : materialDataTriangle->enableLighting = false;
-	//	}
+		//		ImGui::Separator();
+		//		ImGui::Text("CheckBox");
+		//		ImGui::Checkbox("enableLighting", &useLightingTriangle);
+		//		useLightingTriangle ? materialDataTriangle->enableLighting = true : materialDataTriangle->enableLighting = false;
+		//	}
 
-	//	ImGui::End();
-	//#endif
+		//	ImGui::End();
+		//#endif
 
-	//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (ModelData)
+		//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (ModelData)
 
-	//	//transform.rotate.y += 0.01f;
-	//	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-	//	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-	//	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-	//	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-	//	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-	//	wvpData->WVP = worldViewProjectionMatrix;
-	//	wvpData->World = worldMatrix;
+		//	//transform.rotate.y += 0.01f;
+		//	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+		//	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+		//	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+		//	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+		//	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+		//	wvpData->WVP = worldViewProjectionMatrix;
+		//	wvpData->World = worldMatrix;
 
-	//#pragma endregion
+		//#pragma endregion
 
-	//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (Triangle)
+		//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (Triangle)
 
-	//	//transform.rotate.y += 0.01f;
-	//	Matrix4x4 worldMatrixTriangle = MakeAffineMatrix(transformTriangle.scale, transformTriangle.rotate, transformTriangle.translate);
-	//	Matrix4x4 cameraMatrixTriangle = MakeAffineMatrix(cameraTransformTriangle.scale, cameraTransformTriangle.rotate, cameraTransformTriangle.translate);
-	//	Matrix4x4 viewMatrixTriangle = Inverse(cameraMatrixTriangle);
-	//	Matrix4x4 projectionMatrixTriangle = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-	//	Matrix4x4 worldViewProjectionMatrixTriangle = Multiply(worldMatrixTriangle, Multiply(viewMatrixTriangle, projectionMatrixTriangle));
-	//	wvpDataTriangle->WVP = worldViewProjectionMatrixTriangle;
-	//	wvpDataTriangle->World = worldMatrixTriangle;
+		//	//transform.rotate.y += 0.01f;
+		//	Matrix4x4 worldMatrixTriangle = MakeAffineMatrix(transformTriangle.scale, transformTriangle.rotate, transformTriangle.translate);
+		//	Matrix4x4 cameraMatrixTriangle = MakeAffineMatrix(cameraTransformTriangle.scale, cameraTransformTriangle.rotate, cameraTransformTriangle.translate);
+		//	Matrix4x4 viewMatrixTriangle = Inverse(cameraMatrixTriangle);
+		//	Matrix4x4 projectionMatrixTriangle = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+		//	Matrix4x4 worldViewProjectionMatrixTriangle = Multiply(worldMatrixTriangle, Multiply(viewMatrixTriangle, projectionMatrixTriangle));
+		//	wvpDataTriangle->WVP = worldViewProjectionMatrixTriangle;
+		//	wvpDataTriangle->World = worldMatrixTriangle;
 
-	//#pragma endregion
+		//#pragma endregion
 
-	//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (Sphere)
+		//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (Sphere)
 
-	//	transformSphere.rotate.y += 0.01f;
-	//	Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.translate);
-	//	Matrix4x4 cameraMatrixSphere = MakeAffineMatrix(cameraTransformSphere.scale, cameraTransformSphere.rotate, cameraTransformSphere.translate);
-	//	Matrix4x4 viewMatrixSphere = Inverse(cameraMatrixSphere);
-	//	Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-	//	Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
-	//	wvpDataSphere->WVP = worldViewProjectionMatrixSphere;
-	//	wvpDataSphere->World = worldMatrixSphere;
+		//	transformSphere.rotate.y += 0.01f;
+		//	Matrix4x4 worldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.translate);
+		//	Matrix4x4 cameraMatrixSphere = MakeAffineMatrix(cameraTransformSphere.scale, cameraTransformSphere.rotate, cameraTransformSphere.translate);
+		//	Matrix4x4 viewMatrixSphere = Inverse(cameraMatrixSphere);
+		//	Matrix4x4 projectionMatrixSphere = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+		//	Matrix4x4 worldViewProjectionMatrixSphere = Multiply(worldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
+		//	wvpDataSphere->WVP = worldViewProjectionMatrixSphere;
+		//	wvpDataSphere->World = worldMatrixSphere;
 
-	//#pragma endregion
+		//#pragma endregion
 
-	//#pragma region ワールド・ビュー・プロジェクション行列計算: 2D Object (Sprite)	
+		//#pragma region ワールド・ビュー・プロジェクション行列計算: 2D Object (Sprite)	
 
-	//	// Sprite用のWorldViewProjectionMatrixを作る
-	//	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-	//	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-	//	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
-	//	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-	//	wvpDataSprite->WVP = worldViewProjectionMatrixSprite;
-	//	wvpDataSprite->World = worldMatrixSprite;
+		//	// Sprite用のWorldViewProjectionMatrixを作る
+		//	Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+		//	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+		//	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
+		//	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+		//	wvpDataSprite->WVP = worldViewProjectionMatrixSprite;
+		//	wvpDataSprite->World = worldMatrixSprite;
 
-	//	Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
-	//	uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
-	//	uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
-	//	materialDataSprite->uvTransform = uvTransformMatrix;
+		//	Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
+		//	uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
+		//	uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
+		//	materialDataSprite->uvTransform = uvTransformMatrix;
 
-	//#pragma endregion
+		//#pragma endregion
 
 	#ifdef USE_IMGUI
 		// ImGuiの内部コマンドを生成する
@@ -1559,54 +1559,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	#pragma region 画面をクリアする
 
-		/**************************************************
-		* コマンドを積み込む
-		**************************************************/
-
-		//// これから書き込むバックバッファのインデックスを取得
-		//UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
-
-		////----TransitionBarrierを張る----
-
-		//// TransitionBarrierの設定
-		//D3D12_RESOURCE_BARRIER barrier {};
-		//// 今回のバリアはTransition
-		//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		//// Noneにしておく
-		//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		//// バリアを張る対象のリソース。現在のバックバッファに対して行う
-		//barrier.Transition.pResource = swapChainResources[backBufferIndex].Get();
-		//// 遷移前（現在）のResourceState
-		//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		//// 遷移後のResourceState
-		//barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		//// TransitionBarrierを張る
-		//commandList->ResourceBarrier(1, &barrier);
-
-		////----描画先を設定、指定した色でクリア（塗りつぶしを）する----
-
-		//// 描画先のRTVとDSVを設定する
-		//D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = GetCPUDescriptorHandle(dsvDescriptorHeap, desriptorSizeDSV, 0);
-
-		//// 描画先のRTVを設定する
-		//commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
-
-		//// 指定した色で画面全体をクリアする
-		//float clearColor[] = { 0.1f,0.25f,0.5f,1.0f }; // 青っぽい色。RGBAの順
-		//commandList->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
-
-		//commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, &dsvHandle);
-
-		//// 指定した深度で画面全体をクリアする
-		//commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-		//// 描画用のDescriptorHeapの設定
-		//ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap.Get() };
-		//commandList->SetDescriptorHeaps(1, descriptorHeaps);
-
-		////----コマンドを積む----
-		//commandList->RSSetViewports(1, &viewport); // Viewportを設定
-		//commandList->RSSetScissorRects(1, &scissorRect); // Scissorを設定
+		// 描画前処理
+		dxCommon->PreDraw();
 
 		//// RootSignatureを設定。PSOに設定しているけどベット設定が必要
 		//commandList->SetGraphicsRootSignature(rootSignature.Get());
@@ -1698,55 +1652,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
 	//#endif
 
-		//----画面表示できるようにする----
-
-		//// 画面に描く処理はすべて終わり、画面に映すので、状態を遷移
-		//// 今回はRenderTargetからPresentにする
-		//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		//barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-		//// TransitionBarrierを張る
-		//commandList->ResourceBarrier(1, &barrier);
-
-		////----CommandListを閉じる----
-
-		//// コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
-		//hr = commandList->Close();
-		//assert(SUCCEEDED(hr));
-
-		///**************************************************
-		//* コマンドをキックする
-		//**************************************************/
-
-		//// GPUにコマンドリストの実行を行わせる
-		//ID3D12CommandList* commandLists[] = { commandList.Get() };
-		//commandQueue->ExecuteCommandLists(1, commandLists);
-		//// GPUとOSに画面の交換を行うよう通知する
-		//swapChain->Present(1, 0);
-
-		////----GPUにSignalを送る----
-
-		//// Fenceの値を更新
-		//fenceValue++;
-		//// GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入するようにSignalを送る
-		//commandQueue->Signal(fence.Get(), fenceValue);
-
-		////----待機処理----
-
-		//// Fenceの値が指定したSignal値にたどり着いているか確認する
-		//// GetCompletedValueの初期値はFence作成時に渡した初期値
-		//if (fence->GetCompletedValue() < fenceValue)
-		//{
-		//	// 指定したSignalにたどりついていないので、たどり着くまで待つようにイベントを設定する
-		//	fence->SetEventOnCompletion(fenceValue, fenceEvent);
-		//	// イベント待つ
-		//	WaitForSingleObject(fenceEvent, INFINITE);
-		//}
-
-		//// 次のフレーム用のコマンドリストを準備
-		//hr = commandAllocator->Reset();
-		//assert(SUCCEEDED(hr));
-		//hr = commandList->Reset(commandAllocator.Get(), nullptr);
-		//assert(SUCCEEDED(hr));
+	    // 描画後処理
+		dxCommon->PostDraw();
 
 	#pragma endregion
 	}
