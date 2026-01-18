@@ -5,6 +5,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 #include <cstdint>
 
+#pragma comment(lib,"winmm.lib")
+
 // ウィンドウプロシージャ
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -28,6 +30,9 @@ LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 
 void WinApp::Initialize()
 {
+	// システムタイマーの分解能を上げる
+	timeBeginPeriod(1);
+
 	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 
 	// ウィンドウプロシージャ
