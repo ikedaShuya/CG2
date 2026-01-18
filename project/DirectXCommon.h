@@ -4,7 +4,11 @@
 #include <wrl.h>
 #include <array>
 #include <dxcapi.h>
+#include <string>
 #include "WinApp.h"
+
+#include "externals/DirectXTex/DirectXTex.h"
+#include "externals/DirectXTex/d3dx12.h"
 
 // DirectX基盤
 class DirectXCommon
@@ -89,6 +93,35 @@ public: // メンバ関数
 	// 描画後処理
 	void PostDraw();
 
+	// getter
+	ID3D12Device *GetDevice() const { return device.Get(); }
+	ID3D12GraphicsCommandList *GetCommandList() const { return commandList.Get(); }
+
+	// シェーダーのコンパイル
+	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring &filePath, const wchar_t *profile);
+
+	/// <summary>
+	/// バッファリソースの生成
+	/// </summary>
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+
+	/// <summary>
+	/// テクスチャリソースの生成
+	/// </summary>
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata &metadata);
+
+	/// <summary>
+	/// テクスチャデータの転送
+	/// </summary>
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages);
+
+	/// <summary>
+	/// テクスチャファイルの読み込み
+	/// </summary>
+	/// <param name="filePath">テクスチャファイルのパス</param>
+	/// <returns>画像イメージデータ</returns>
+	static DirectX::ScratchImage LoadTexture(const std::string &filePath);
+
 private:
 	// DirectX12デバイス
 	Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
@@ -141,10 +174,10 @@ private:
 	// シザー矩形
 	D3D12_RECT scissorRect {};
 	// dxcCompilerを初期化
-	IDxcUtils *dxcUtils = nullptr;
-	IDxcCompiler3 *dxcCompiler = nullptr;
+	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils = nullptr;
+	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler = nullptr;
 	// 現時点でincludeはしないが、includeに対応するための設定を行っておく
-	IDxcIncludeHandler *includeHandler = nullptr;
+	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler = nullptr;
 	// TransitionBarrierの設定
 	D3D12_RESOURCE_BARRIER barrier {};
 };
