@@ -14,6 +14,8 @@
 #include "Input.h"
 #include "DirectXCommon.h"
 #include "D3DResourceLeakChecker.h"
+#include "SpriteCommon.h"
+#include "Sprite.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -242,7 +244,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 }
 
 // Dump出力
-static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
+static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
 
 	// 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpsディレクトリ以下に出力
 	SYSTEMTIME time;
@@ -414,12 +416,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	D3DResourceLeakChecker leakCheck;
 
+#pragma region DirectX
+
 	// ポインタ
 	DirectXCommon *dxCommon = nullptr;
 
 	// DirectXの初期化
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
+
+#pragma endregion
+
+#pragma region 基盤システムの初期化
+
+	SpriteCommon *spriteCommon = nullptr;
+	// スプライト共通部の初期化
+	spriteCommon = new SpriteCommon;
+	spriteCommon->Initialize();
+
+#pragma endregion
+
+#pragma region 最初のシーンの初期化
+
+	Sprite *sprite = new Sprite();
+	sprite->Initialize();
+
+#pragma endregion
 
 #pragma region 音楽
 
@@ -1468,7 +1490,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui::DestroyContext();
 #endif
 
-	//CloseHandle(fenceEvent);
+	delete sprite;
+	delete spriteCommon;
 
 	// 入力解放
 	delete input;
