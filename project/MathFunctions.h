@@ -41,4 +41,5 @@ namespace math
 
     // 行列の掛け算演算子
     Matrix4x4 operator*(const Matrix4x4 &m1, const Matrix4x4 &m2);
+    Vector2 &operator+=(Vector2 &lhs, const Vector2 &rhs);
 }

@@ -42,6 +42,20 @@ public: // メンバ関数
 	// 描画
 	void Draw();
 
+	// getter
+	const math::Vector2 &GetPosition() { return position_; }
+	// setter
+	void SetPosition(const math::Vector2 &position) { this->position_ = position; }
+
+	float GetRotation() const { return rotation_; }
+	void SetRotation(float rotation) { this->rotation_ = rotation; }
+
+	const math::Vector4 &GetColor() const { return materialData->color; }
+	void SetColor(const math::Vector4 &color) { materialData->color = color; }
+
+	const math::Vector2 &GetSize() const { return size_; }
+	void SetSize(const math::Vector2 &size) { this->size_ = size; }
+
 private:
 	SpriteCommon *spriteCommon = nullptr;
 
@@ -75,4 +89,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource;
 	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU {};
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU {};
+
+	math::Vector2 position_ = { 0.0f,0.0f };
+	float rotation_ = 0.0f;
+	math::Vector2 size_ = { 64.0f,64.0f };
 };

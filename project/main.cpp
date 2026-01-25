@@ -401,8 +401,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region 最初のシーンの初期化
 
-	Sprite *sprite = new Sprite();
-	sprite->Initialize(spriteCommon);
+	std::vector<Sprite *>sprites;
+	for (uint32_t i = 0; i < 5; ++i) {
+		Sprite *sprite = new Sprite();
+		sprite->Initialize(spriteCommon);
+		sprite->SetPosition({ 100.0f + i * 150.0f, 100.0f });
+		sprites.push_back(sprite);
+	}
 
 #pragma endregion
 
@@ -884,6 +889,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			transform.rotate.y += 0.01f;
 		}*/
 
+	#pragma region 更新: 2D Object (Sprite)
+
+		for (uint32_t i = 0; i < sprites.size(); ++i) {
+			sprites[i]->Update();
+		}
+
+	#pragma endregion
+
 	#ifdef USE_IMGUI
 		// フレームの開始
 		ImGui_ImplDX12_NewFrame();
@@ -891,127 +904,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::NewFrame();
 	#endif
 
-		//#ifdef USE_IMGUI
-		//	ImGui::Begin("Settings");
-
-		//	// 対象選択
-		//	static int current = 0;
-		//	const char *targets[] = { "ModelData","Sphere", "Sprite","Triangle" };
-		//	ImGui::Combo("Target", &current, targets, IM_ARRAYSIZE(targets));
-
-		//	ImGui::Separator();
-
-		//	if (current == 0) {
-
-		//		ImGui::Checkbox("Show ModelData", &showModelData);
-
-		//		ImGui::Separator();
-		//		ImGui::InputFloat3("CameraTranslate", &cameraTransform.translate.x);
-		//		ImGui::SliderAngle("CameraRotateX", &cameraTransform.rotate.x);
-		//		ImGui::SliderAngle("CameraRotateY", &cameraTransform.rotate.y);
-		//		ImGui::SliderAngle("CameraRotateZ", &cameraTransform.rotate.z);
-		//		ImGui::SliderAngle("RotateX", &transform.rotate.x);
-		//		ImGui::SliderAngle("RotateY", &transform.rotate.y);
-		//		ImGui::SliderAngle("RotateZ", &transform.rotate.z);
-		//		ImGui::Separator();
-		//		ImGui::ColorEdit3("Color", &materialData->color.x);
-		//		ImGui::Separator();
-		//		ImGui::Checkbox("enableLighting", &useLighting);
-		//		useLighting ? materialData->enableLighting = true : materialData->enableLighting = false;
-		//		ImGui::Separator();
-		//		ImGui::ColorEdit3("Light Color", &directionalLightData->color.x);
-		//		ImGui::SliderFloat3("Light Direction", &directionalLightData->direction.x, -1.0f, 1.0f);
-		//		ImGui::SliderFloat("Light Intensity", &directionalLightData->intensity, 0.0f, 5.0f);
-
-		//	} else if (current == 1) {
-
-		//		ImGui::Checkbox("Show Sphere", &showSphere);
-
-		//		// ===== Sphere =====
-		//		ImGui::Text("Transform");
-		//		ImGui::SliderFloat3("Scale", &transformSphere.scale.x, 0.1f, 5.0f);
-		//		ImGui::SliderFloat3("Rotate", &transformSphere.rotate.x, -3.14f, 3.14f);
-		//		ImGui::SliderFloat3("Translate", &transformSphere.translate.x, -5.0f, 5.0f);
-		//		if (ImGui::Button("Reset transformSphere")) {
-		//			transformSphere = transformSphereInit;
-		//		}
-
-		//		// ===== Material =====
-		//		ImGui::Separator();
-		//		ImGui::Text("Material");
-		//		ImGui::ColorEdit3("Color", &materialDataSphere->color.x);
-
-		//		ImGui::Separator();
-		//		ImGui::Text("Camera");
-		//		ImGui::SliderFloat3("Camera Position", &cameraTransformSphere.translate.x, -20.0f, 20.0f);
-
-		//		ImGui::Separator();
-		//		ImGui::Text("Directional Light");
-		//		ImGui::ColorEdit3("Light Color", &directionalLightDataSphere->color.x);
-		//		ImGui::SliderFloat3("Light Direction", &directionalLightDataSphere->direction.x, -1.0f, 1.0f);
-		//		ImGui::SliderFloat("Light Intensity", &directionalLightDataSphere->intensity, 0.0f, 5.0f);
-
-		//		ImGui::Separator();
-		//		ImGui::Text("CheckBox");
-		//		ImGui::Checkbox("enableLighting", &useLightingSphere);
-		//		useLightingSphere ? materialDataSphere->enableLighting = true : materialDataSphere->enableLighting = false;
-		//	} else if (current == 2) {
-
-		//		ImGui::Checkbox("Show Sprite", &showSprite);
-
-		//		// ===== Sprite =====
-		//		ImGui::Text("Transform");
-		//		ImGui::SliderFloat3("Scale", &transformSprite.scale.x, 0.1f, 5.0f);
-		//		ImGui::SliderFloat3("Rotate", &transformSprite.rotate.x, -3.14f, 3.14f);
-		//		ImGui::SliderFloat3("Translate", &transformSprite.translate.x, -640.0f, 640.0f);
-
-		//		// ===== Material =====
-		//		ImGui::Separator();
-		//		ImGui::Text("Material");
-		//		ImGui::ColorEdit3("Color", &materialDataSprite->color.x);
-
-		//		ImGui::Separator();
-		//		ImGui::Text("UVTransform");
-		//		ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
-		//		ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-		//		ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
-		//	} else {
-
-		//		ImGui::Checkbox("Show Triangle", &showTriangle);
-
-		//		// ===== Triangle =====
-		//		ImGui::Text("Transform");
-		//		ImGui::SliderFloat3("Scale", &transformTriangle.scale.x, 0.1f, 5.0f);
-		//		ImGui::SliderFloat3("Rotate", &transformTriangle.rotate.x, -3.14f, 3.14f);
-		//		ImGui::SliderFloat3("Translate", &transformTriangle.translate.x, -5.0f, 5.0f);
-
-		//		// ===== Material =====
-		//		ImGui::Separator();
-		//		ImGui::Text("Material");
-		//		ImGui::ColorEdit3("Color", &materialDataTriangle->color.x);
-
-		//		ImGui::Separator();
-		//		ImGui::Text("Camera");
-		//		ImGui::SliderFloat3("Camera Position", &cameraTransformTriangle.translate.x, -10.0f, 10.0f);
-
-		//		ImGui::Separator();
-		//		ImGui::Text("Directional Light");
-		//		ImGui::ColorEdit3("Light Color", &directionalLightDataTriangle->color.x);
-		//		ImGui::SliderFloat3("Light Direction", &directionalLightDataTriangle->direction.x, -1.0f, 1.0f);
-		//		ImGui::SliderFloat("Light Intensity", &directionalLightDataTriangle->intensity, 0.0f, 5.0f);
-
-		//		ImGui::Separator();
-		//		ImGui::Text("CheckBox");
-		//		ImGui::Checkbox("enableLighting", &useLightingTriangle);
-		//		useLightingTriangle ? materialDataTriangle->enableLighting = true : materialDataTriangle->enableLighting = false;
-		//	}
-
-		//	ImGui::End();
-		//#endif
-
+	#ifdef USE_IMGUI
 		ImGui::Begin("Settings");
 
+		static int current = 0;
+		ImGui::SliderInt("Sprite Index", &current, 0, static_cast<int>(sprites.size()) - 1);
+
+		Sprite *sprite = sprites[current];
+
+		Vector2 size = sprite->GetSize();
+		float rotation = sprite->GetRotation();
+		Vector2 position = sprite->GetPosition();
+		Vector4 color = sprite->GetColor();
+
+		ImGui::DragFloat2("S", &size.x, 1.0f, 0.0f, 1000.0f);
+		ImGui::SliderAngle("R", &rotation);
+		ImGui::DragFloat2("T", &position.x, 1.0f);
+		ImGui::ColorEdit3("Color", &color.x);
+
+		// 変更を反映
+		sprite->SetSize(size);
+		sprite->SetRotation(rotation);
+		sprite->SetPosition(position);
+		sprite->SetColor(color);
+
 		ImGui::End();
+	#endif
 
 		//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (ModelData)
 
@@ -1051,12 +969,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//	wvpDataSphere->World = worldMatrixSphere;
 
 		//#pragma endregion
-
-	#pragma region 更新: 2D Object (Sprite)
-
-		sprite->Update();
-
-	#pragma endregion
 
 	#ifdef USE_IMGUI
 		// ImGuiの内部コマンドを生成する
@@ -1135,7 +1047,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	#pragma region 描画: 2D Object (Sprite)
 
-		sprite->Draw();
+		for (uint32_t i = 0; i < sprites.size(); ++i) {
+			sprites[i]->Draw();
+		}
 
 	#pragma endregion
 
@@ -1165,7 +1079,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui::DestroyContext();
 #endif
 
-	delete sprite;
+	for (uint32_t i = 0; i < sprites.size(); ++i) {
+		delete sprites[i];
+	}
+	sprites.clear();
 	delete spriteCommon;
 
 	// 入力解放

@@ -35,7 +35,39 @@ void Sprite::Initialize(SpriteCommon *spriteCommon)
 
 void Sprite::Update()
 {
-	transform = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	// 頂点リソースにデータを書き込む
+	// 左下
+	vertexData[0].position = { 0.0f,1.0f,0.0f,1.0f };
+	vertexData[0].texcoord = { 0.0f,1.0f };
+	vertexData[0].normal = { 0.0f,0.0f,-1.0f };
+	//左上
+	vertexData[1].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexData[1].texcoord = { 0.0f,0.0f };
+	vertexData[1].normal = { 0.0f,0.0f,-1.0f };
+	// 右下
+	vertexData[2].position = { 1.0f,1.0f,0.0f,1.0f };
+	vertexData[2].texcoord = { 1.0f,1.0f };
+	vertexData[2].normal = { 0.0f,0.0f,-1.0f };
+	// 右上
+	vertexData[3].position = { 1.0f,0.0f,0.0f,1.0f };
+	vertexData[3].texcoord = { 1.0f,0.0f };
+	vertexData[3].normal = { 0.0f,0.0f,-1.0f };
+
+	//size_.x += 0.1f;
+	//size_.y += 0.1f;
+	// 角度を変化させるテスト
+	//rotation_ += 0.01f;
+	// 座標を変更する
+	//position_ += Vector2 { 0.1f,0.1f };
+	//materialData->color.x += 0.01f;
+	//if (materialData->color.x > 1.0f) {
+	//	materialData->color.x -= 1.0f;
+	//}
+
+	transform.scale = { size_.x,size_.y,1.0f };
+	transform.rotate = { 0.0f,0.0f,rotation_ };
+	transform.translate = { position_.x,position_.y,0.0f };
+
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 	Matrix4x4 viewMatrix = MakeIdentity4x4();
 	Matrix4x4 projectionMatrix = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
