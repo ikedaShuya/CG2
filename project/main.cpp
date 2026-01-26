@@ -17,6 +17,7 @@
 #include "Sprite.h"
 #include "MathFunctions.h"
 #include "Light.h"
+#include "TextureManager.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -390,6 +391,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
+	TextureManager::GetInstance()->SetDirectXCommon(dxCommon);
+	// テクスチャマネージャの初期化
+	TextureManager::GetInstance()->Initialize();
+
 #pragma region 基盤システムの初期化
 
 	SpriteCommon *spriteCommon = nullptr;
@@ -401,11 +406,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region 最初のシーンの初期化
 
+	std::vector<std::string> textures = {
+	"resources/textures/uvChecker.png",
+	"resources/textures/monsterball.png"
+	};
+
 	std::vector<Sprite *>sprites;
-	for (uint32_t i = 0; i < 5; ++i) {
+	for (uint32_t i = 0; i < 6; ++i) {
 		Sprite *sprite = new Sprite();
-		sprite->Initialize(spriteCommon);
-		sprite->SetPosition({ 100.0f + i * 150.0f, 100.0f });
+		// 2つの画像を交互に割り当てるために、i % 2でインデックスを切り替え
+		std::string &textureFile = textures[i % 2];
+		sprite->Initialize(spriteCommon, textureFile);
+		sprite->SetPosition({ 100.0f + i * 200.0f, 100.0f });
 		sprites.push_back(sprite);
 	}
 
@@ -1061,6 +1073,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 描画後処理
 		dxCommon->PostDraw();
 
+		TextureManager::GetInstance()->ReleaseIntermediateResources();
+
 	#pragma endregion
 	}
 
@@ -1068,8 +1082,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region Object解放
 
-	// WindowsAPIの終了処理
-	winApp->Finalize();
+	// テクスチャマネージャの終了
+	TextureManager::GetInstance()->Finalize();
 
 #ifdef USE_IMGUI
 	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する。
@@ -1093,6 +1107,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	xAudio2.Reset();
 	// 音声データ解放
 	SoundUnload(&soundData1);
+
+	// WindowsAPIの終了処理
+	winApp->Finalize();
 
 	// WindowsAPI解放
 	delete winApp;

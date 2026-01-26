@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <wrl.h>
 #include <d3d12.h>
+#include <string>
 #include "MathFunctions.h"
 
 class SpriteCommon;
@@ -36,7 +37,11 @@ public:
 
 public: // メンバ関数
 	// 初期化
-	void Initialize(SpriteCommon *spriteCommon);
+	void Initialize(SpriteCommon *spriteCommon, std::string textureFilePath);
+
+	// テクスチャ差し替え
+	void ChangeTexture(std::string textureFilePath);
+
 	// 更新
 	void Update();
 	// 描画
@@ -57,7 +62,7 @@ public: // メンバ関数
 	void SetSize(const math::Vector2 &size) { this->size_ = size; }
 
 private:
-	SpriteCommon *spriteCommon = nullptr;
+	SpriteCommon *spriteCommon_ = nullptr;
 
 	// バッファリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
@@ -92,5 +97,7 @@ private:
 
 	math::Vector2 position_ = { 0.0f,0.0f };
 	float rotation_ = 0.0f;
-	math::Vector2 size_ = { 64.0f,64.0f };
+	math::Vector2 size_ = { 128.0f,128.0f };
+	// テクスチャ番号
+	uint32_t textureIndex = 0;
 };

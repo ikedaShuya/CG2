@@ -1,36 +1,29 @@
 #include "Sprite.h"
 #include "SpriteCommon.h"
 #include "DirectXCommon.h"
+#include "TextureManager.h"
 
 using namespace math;
 
-void Sprite::Initialize(SpriteCommon *spriteCommon)
+void Sprite::Initialize(SpriteCommon *spriteCommon, std::string textureFilePath)
 {
 	// 引数で受け取ってメンバ変数に記録する
-	this->spriteCommon = spriteCommon;
+	this->spriteCommon_ = spriteCommon;
+
+	TextureManager::GetInstance()->LoadTexture(textureFilePath);
 
 	InitializeBuffers();
 	InitializeMaterial();
 	InitializeTransformationMatrixResource();
 
-	// Textureを読んで転送する
-	DirectX::ScratchImage mipImages = spriteCommon->GetDxCommon()->LoadTexture("resources/textures/uvChecker.png");
-	const DirectX::TexMetadata &metadata = mipImages.GetMetadata();
-	textureResource = spriteCommon->GetDxCommon()->CreateTextureResource(metadata);
-	intermediateResource = spriteCommon->GetDxCommon()->UploadTextureData(textureResource, mipImages);
+	// 単位行列を書き込んでおく
+	textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+}
 
-	// metaDataを基にSRVの設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc {};
-	srvDesc.Format = metadata.format;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // 2Dテクスチャ
-	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
-
-	// SRVを作成するDescriptorHeapの場所を決める
-	textureSrvHandleCPU = spriteCommon->GetDxCommon()->GetSRVCPUDescriptorHandle(1);
-	textureSrvHandleGPU = spriteCommon->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
-	// SRVの生成
-	spriteCommon->GetDxCommon()->GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
+void Sprite::ChangeTexture(std::string textureFilePath)
+{
+	// 読み込んだテクスチャのインデックスを取得してメンバ変数に保存
+	textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 }
 
 void Sprite::Update()
@@ -77,25 +70,25 @@ void Sprite::Update()
 
 void Sprite::Draw()
 {
-	spriteCommon->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
-	spriteCommon->GetDxCommon()->GetCommandList()->IASetIndexBuffer(&indexBufferView); // IBVを設定
+	spriteCommon_->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+	spriteCommon_->GetDxCommon()->GetCommandList()->IASetIndexBuffer(&indexBufferView); // IBVを設定
 
-	spriteCommon->GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	spriteCommon_->GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	// TransformationMatrixCBufferの場所を設定
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
 	//描画!(DrawCall/ドローコール)6個のインデックスを使用し1つのインスタンスを描画。その他は当面0で良い
-	spriteCommon->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	spriteCommon_->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
 
 void Sprite::InitializeBuffers()
 {
 	// 頂点・インデックス用リソースを作成
-	vertexResource = spriteCommon->GetDxCommon()->CreateBufferResource(sizeof(VertexData) * 4);
-	indexResource = spriteCommon->GetDxCommon()->CreateBufferResource(sizeof(uint32_t) * 6);
+	vertexResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(VertexData) * 4);
+	indexResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(uint32_t) * 6);
 
 	// 頂点バッファビューの設定
 	// リソースの先頭のアドレスから使う
@@ -144,7 +137,7 @@ void Sprite::InitializeBuffers()
 void Sprite::InitializeMaterial()
 {
 	// マテリアルリソースを作成
-	materialResource = spriteCommon->GetDxCommon()->CreateBufferResource(sizeof(Material));
+	materialResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(Material));
 
 	// バッファをCPUアクセス用にマップしてポインタ取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void **>(&materialData));
@@ -158,7 +151,7 @@ void Sprite::InitializeMaterial()
 void Sprite::InitializeTransformationMatrixResource()
 {
 	// 座標変換行列リソースを作成
-	transformationMatrixResource = spriteCommon->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
+	transformationMatrixResource = spriteCommon_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
 
 	// 書き込むためのアドレスを取得
 	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void **>(&transformationMatrixData));

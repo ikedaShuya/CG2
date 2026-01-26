@@ -160,6 +160,7 @@ xcopy /Y /D "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxil.dl
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="SpriteCommon.cpp" />
     <ClCompile Include="StringUtility.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="WinApp.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -199,6 +200,7 @@ xcopy /Y /D "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxil.dl
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="SpriteCommon.h" />
     <ClInclude Include="StringUtility.h" />
+    <ClInclude Include="TextureManager.h" />
     <ClInclude Include="WinApp.h" />
   </ItemGroup>
   <ItemGroup>
