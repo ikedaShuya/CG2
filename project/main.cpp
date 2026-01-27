@@ -417,6 +417,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 2つの画像を交互に割り当てるために、i % 2でインデックスを切り替え
 		std::string &textureFile = textures[i % 2];
 		sprite->Initialize(spriteCommon, textureFile);
+		sprite->SetIsFlipX(false);
+		sprite->SetIsFlipY(false);
+		sprite->SetTextureLeftTop({ 0.0f, 0.0f });
+		sprite->SetTextureSize({ 64.0f, 64.0f });
+		sprite->SetSize({ 64.0f, 64.0f });
 		sprite->SetPosition({ 100.0f + i * 200.0f, 100.0f });
 		sprites.push_back(sprite);
 	}

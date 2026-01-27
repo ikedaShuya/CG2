@@ -61,6 +61,23 @@ public: // メンバ関数
 	const math::Vector2 &GetSize() const { return size_; }
 	void SetSize(const math::Vector2 &size) { this->size_ = size; }
 
+	// getter
+	const math::Vector2 &GetAnchoPoint() const { return anchorPoint; }
+	// setter
+	void SetAnchorPoint(const math::Vector2 &anchorPoint) { this->anchorPoint = anchorPoint; }
+
+	void SetIsFlipX(bool isFlipX) { isFlipX_ = isFlipX; }
+	void SetIsFlipY(bool isFlipY) { isFlipY_ = isFlipY; }
+
+	bool GetIsFlipX() const { return isFlipX_; }
+	bool GetIsFlipY() const { return isFlipY_; }
+
+	void SetTextureLeftTop(math::Vector2 leftTop) { textureLeftTop = leftTop; }
+	void SetTextureSize(math::Vector2 size) { textureSize = size; }
+
+	math::Vector2 GetTextureLeftTop() const { return textureLeftTop; }
+	math::Vector2 GetTextureSize() const { return textureSize; }
+
 private:
 	SpriteCommon *spriteCommon_ = nullptr;
 
@@ -100,4 +117,18 @@ private:
 	math::Vector2 size_ = { 128.0f,128.0f };
 	// テクスチャ番号
 	uint32_t textureIndex = 0;
+	math::Vector2 anchorPoint = { 0.5f,0.5f };
+
+	// 左右フリップ
+	bool isFlipX_ = false;
+	// 上下フリップ
+	bool isFlipY_ = false;
+
+	// テクスチャ左上座標
+	math::Vector2 textureLeftTop = { 0.0f,0.0f };
+	// テクスチャ切り出しサイズ
+	math::Vector2 textureSize = { 100.0f,100.0f };
+
+	// テクスチャサイズをイメージに合わせる
+	void AdjustTextureSize();
 };
