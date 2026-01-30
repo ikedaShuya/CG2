@@ -439,7 +439,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Object3dCommon *object3dCommon = nullptr;
 	// 3Dオブジェクト共通部の初期化
 	object3dCommon = new Object3dCommon;
-	object3dCommon->Initialize();
+	object3dCommon->Initialize(dxCommon);
 
 #pragma endregion
 
@@ -1034,6 +1034,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		// Spriteの描画準備。Spriteの描画に共通のグラフィックスコマンドを積む
 		spriteCommon->SetupCommonDrawing();
+
+		// 3Dオブジェクトの描画準備。3Dオブジェクトの描画に共通のグラフィックスコマンドを積む
+		object3dCommon->SetCommonRenderSetting();
 
 		//#pragma region 描画: 3D Object (ModelData)
 
