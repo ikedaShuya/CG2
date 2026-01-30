@@ -197,6 +197,8 @@ xcopy /Y /D "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxil.dl
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MathTypes.h" />
     <ClInclude Include="MathFunctions.h" />
+    <ClInclude Include="Object3d.h" />
+    <ClInclude Include="Object3dCommon.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="SpriteCommon.h" />
     <ClInclude Include="StringUtility.h" />

@@ -18,6 +18,8 @@
 #include "MathFunctions.h"
 #include "Light.h"
 #include "TextureManager.h"
+#include "Object3dCommon.h"
+#include "Object3d.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -367,96 +369,143 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
-#pragma region ウィンドウを作ろう
+#pragma region 基盤システムの初期化
 
-	// ポインタ
+	// ===== ウィンドウ関連 =====
+
+	// WinAppポインタ
 	WinApp *winApp = nullptr;
 
-	// WindowsAPIの初期化
+	// WindowsAPI初期化
 	winApp = new WinApp();
 	winApp->Initialize();
 
-#pragma endregion
 
-	D3DResourceLeakChecker leakCheck;
+	// ===== DirectX関連 =====
 
-#pragma region DirectX
-
-	// ポインタ
+	// DirectXCommonポインタ
 	DirectXCommon *dxCommon = nullptr;
 
-	// DirectXの初期化
+	// DirectX初期化
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
 
-#pragma endregion
 
+	// ===== テクスチャ管理 =====
+
+	// DirectXCommonをTextureManagerに渡す
 	TextureManager::GetInstance()->SetDirectXCommon(dxCommon);
-	// テクスチャマネージャの初期化
+
+	// テクスチャマネージャ初期化
 	TextureManager::GetInstance()->Initialize();
 
-#pragma region 基盤システムの初期化
+
+	// ===== スプライト共通処理 =====
 
 	SpriteCommon *spriteCommon = nullptr;
+
 	// スプライト共通部の初期化
 	spriteCommon = new SpriteCommon;
 	spriteCommon->Initialize(dxCommon);
+
+
+	// ===== オーディオ（XAudio2） =====
+
+	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
+	IXAudio2MasteringVoice *masterVoice = nullptr;
+
+	// XAudio2エンジン生成
+	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
+
+	// マスターボイス生成
+	result = xAudio2->CreateMasteringVoice(&masterVoice);
+
+	// 音声データ読み込み
+	SoundData soundData1 = SoundLoadWave("resources/audio/Alarm02.wav");
+
+	// 音声再生
+	SoundPlayWave(xAudio2.Get(), soundData1);
+
+
+	// ===== 入力処理 =====
+
+	// Inputポインタ
+	Input *input = nullptr;
+
+	// 入力初期化
+	input = new Input();
+	input->Initialize(winApp);
+
+	Object3dCommon *object3dCommon = nullptr;
+	// 3Dオブジェクト共通部の初期化
+	object3dCommon = new Object3dCommon;
+	object3dCommon->Initialize();
 
 #pragma endregion
 
 #pragma region 最初のシーンの初期化
 
+	// ===== 使用するテクスチャ一覧 =====
 	std::vector<std::string> textures = {
-	"resources/textures/uvChecker.png",
-	"resources/textures/monsterball.png"
+		"resources/textures/uvChecker.png",
+		"resources/textures/monsterball.png"
 	};
 
-	std::vector<Sprite *>sprites;
+	// ===== スプライト管理用配列 =====
+	std::vector<Sprite *> sprites;
+
+	// ===== スプライトを6枚生成 =====
 	for (uint32_t i = 0; i < 6; ++i) {
 		Sprite *sprite = new Sprite();
-		// 2つの画像を交互に割り当てるために、i % 2でインデックスを切り替え
+
+		// 2種類のテクスチャを交互に使用（0,1,0,1...）
 		std::string &textureFile = textures[i % 2];
+
+		// スプライト初期化
 		sprite->Initialize(spriteCommon, textureFile);
+
+		// 反転設定（左右・上下ともになし）
 		sprite->SetIsFlipX(false);
 		sprite->SetIsFlipY(false);
+
+		// 使用するテクスチャ領域（左上座標とサイズ）
 		sprite->SetTextureLeftTop({ 0.0f, 0.0f });
 		sprite->SetTextureSize({ 64.0f, 64.0f });
+
+		// スプライトの表示サイズ
 		sprite->SetSize({ 64.0f, 64.0f });
+
+		// 表示位置（横方向に等間隔で配置）
 		sprite->SetPosition({ 100.0f + i * 200.0f, 100.0f });
+
+		// 管理配列に追加
 		sprites.push_back(sprite);
 	}
 
-#pragma endregion
 
-#pragma region 音楽
+	// ===== 表示・ライティング切り替え用フラグ =====
 
-	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
-	IXAudio2MasteringVoice *masterVoice;
+	// ライティング制御
+	bool useLighting = false;
+	bool useLightingTriangle = false;
+	bool useLightingSphere = false;
 
-	// XAudioエンジンのインスタンスを生成
-	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
+	// 表示対象切り替え
+	bool showModelData = true;
+	bool showTriangle = false;
+	bool showSphere = false;
+	bool showSprite = false;
 
-	// マスターボイスを生成
-	result = xAudio2->CreateMasteringVoice(&masterVoice);
 
-	// 音声読み込み
-	SoundData soundData1 = SoundLoadWave("resources/audio/Alarm02.wav");
+	// ===== 3Dオブジェクト生成 =====
+	Object3d *object3d = new Object3d();
 
-	// 音楽再生
-	SoundPlayWave(xAudio2.Get(), soundData1);
-
-#pragma endregion
-
-#pragma region 入力デバイス
-
-	// ポインタ
-	Input *input = nullptr;
-
-	// 入力の初期化
-	input = new Input();
-	input->Initialize(winApp);
+	// Object3dの初期化（モデル・行列・定数バッファなどの準備）
+	object3d->Initialize();
 
 #pragma endregion
+
+	D3DResourceLeakChecker leakCheck;
 
 	//#pragma region Resources: 3D Object (ModelData)
 	//
@@ -846,20 +895,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	//#pragma endregion
 
-#pragma region 状態管理（フラグなど）
-
-	//平行光源の切り替え	
-	bool useLighting = false;
-	bool useLightingTriangle = false;
-	bool useLightingSphere = false;
-
-	bool showModelData = true;
-	bool showTriangle = false;
-	bool showSphere = false;
-	bool showSprite = false;
-
-#pragma endregion
-
 #pragma region メインループ
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -1087,42 +1122,55 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region Object解放
 
-	// テクスチャマネージャの終了
+	// ===== 3Dオブジェクト =====
+	delete object3d;
+	object3d = nullptr;
+
+	delete object3dCommon;
+	object3dCommon = nullptr;
+
+
+	// ===== スプライト =====
+	for (Sprite *sprite : sprites) {
+		delete sprite;
+	}
+	sprites.clear();
+
+	delete spriteCommon;
+	spriteCommon = nullptr;
+
+
+	// ===== テクスチャ管理 =====
 	TextureManager::GetInstance()->Finalize();
 
+
+	// ===== ImGui =====
 #ifdef USE_IMGUI
-	// ImGuiの終了処理。詳細はさして重要ではないので解説は省略する。
-	// こういうもんである。初期化と逆順に行う
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 #endif
 
-	for (uint32_t i = 0; i < sprites.size(); ++i) {
-		delete sprites[i];
-	}
-	sprites.clear();
-	delete spriteCommon;
 
-	// 入力解放
+	// ===== 入力 =====
 	delete input;
 	input = nullptr;
 
-	// XAudio2解放
-	xAudio2.Reset();
-	// 音声データ解放
+
+	// ===== オーディオ =====
 	SoundUnload(&soundData1);
+	xAudio2.Reset();
 
-	// WindowsAPIの終了処理
-	winApp->Finalize();
 
-	// WindowsAPI解放
-	delete winApp;
-	winApp = nullptr;
-
-	// DirectX解放
+	// ===== DirectX =====
 	delete dxCommon;
 	dxCommon = nullptr;
+
+
+	// ===== WinApp =====
+	winApp->Finalize();
+	delete winApp;
+	winApp = nullptr;
 
 #pragma endregion
 
