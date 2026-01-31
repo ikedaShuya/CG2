@@ -4,7 +4,7 @@
 void Object3dCommon::Initialize(DirectXCommon *dxCommon) {
 
 	// 引数で受け取ってメンバ変数に記録する
-	dxCommon_ = dxCommon;
+	this->dxCommon_ = dxCommon;
 
 	CreateGraphicsPipelineState();
 }

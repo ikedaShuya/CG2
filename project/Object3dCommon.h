@@ -24,5 +24,5 @@ private:
 	// グラフィックスパイプラインの生成
 	void CreateGraphicsPipelineState();
 
-	DirectXCommon *dxCommon_;
+	DirectXCommon *dxCommon_ = nullptr;
 };

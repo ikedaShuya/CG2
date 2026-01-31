@@ -7,6 +7,7 @@
 
 class Object3dCommon;
 class DirectXCommon;
+class Model;
 
 // 3Dオブジェクト
 class Object3d
@@ -70,41 +71,29 @@ public: // メンバ関数
 	// 描画
 	void Draw();
 
-	// ===== モデル読み込み =====
-	static MaterialData LoadMaterialTemplateFile(const std::string &directoryPath, const std::string &filename);
-
-	static ModelData LoadObjFile(const std::string &directoryPath, const std::string &filename);
-
 	// ===== リソース生成 =====
 	void CreateVertexBuffer(const std::vector<VertexData> &vertices);
 	void CreateMaterialResource();
 	void CreateTransformationMatrixResource();
 	void CreateDirectionalLight();
 
+	// setter
+	void SetModel(Model *model) { this->model = model; }
+
+	// setter
+	void SetScale(const math::Vector3 &scale) { transform.scale = scale; }
+	void SetRotate(const math::Vector3 &rotate) { transform.rotate = rotate; }
+	void SetTranslate(const math::Vector3 &translate) { transform.translate = translate; }
+
+	// getter
+	const math::Vector3 &GetScale() const { return transform.scale; }
+	const math::Vector3 &GetRotate() const { return transform.rotate; }
+	const math::Vector3 &GetTranslate() const { return transform.translate; }
+
 private:
 
 	// ===== 共通オブジェクト =====
 	Object3dCommon *object3dCommon = nullptr;
-
-
-	// ===== モデルデータ =====
-	// objファイルから読み込んだモデル情報
-	ModelData modelData;
-
-	// ===== 頂点バッファ =====
-	// 頂点バッファリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = nullptr;
-	// バッファ内の頂点データを書き込むポインタ
-	VertexData *vertexData = nullptr;
-	// 頂点バッファビュー
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView {};
-
-
-	// ===== マテリアル =====
-	// マテリアル用バッファリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = nullptr;
-	// マテリアルデータ書き込み用ポインタ
-	Material *materialData = nullptr;
 
 
 	// ===== 変換行列 =====
@@ -126,4 +115,6 @@ private:
 	math::Transform transform;
 	// カメラのTransform
 	math::Transform cameraTransform;
+
+	Model *model = nullptr;
 };

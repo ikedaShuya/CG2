@@ -19,6 +19,8 @@
 #include "TextureManager.h"
 #include "Object3dCommon.h"
 #include "Object3d.h"
+#include "Model.h"
+#include "ModelCommon.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -253,27 +255,43 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ===== ウィンドウ関連 =====
 
-	// WinAppポインタ
+	// WinAppポインタ作成
 	WinApp *winApp = nullptr;
 
-	// WindowsAPI初期化
+	// Windows API 初期化
 	winApp = new WinApp();
 	winApp->Initialize();
 
 
 	// ===== DirectX関連 =====
 
-	// DirectXCommonポインタ
+	// DirectXCommonポインタ作成
 	DirectXCommon *dxCommon = nullptr;
 
-	// DirectX初期化
+	// DirectX初期化（ウィンドウ情報を渡す）
 	dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
 
 
+	// ===== 3Dオブジェクト共通部初期化 =====
+
+	// Object3dCommonポインタ作成
+	Object3dCommon *object3dCommon = nullptr;
+	object3dCommon = new Object3dCommon();
+	object3dCommon->Initialize(dxCommon);
+
+
+	// ===== モデル共通部初期化 =====
+
+	// ModelCommonポインタ作成
+	ModelCommon *modelCommon = nullptr;
+	modelCommon = new ModelCommon();
+	modelCommon->Initialize(dxCommon);
+
+
 	// ===== テクスチャ管理 =====
 
-	// DirectXCommonをTextureManagerに渡す
+	// DirectXCommonをTextureManagerにセット
 	TextureManager::GetInstance()->SetDirectXCommon(dxCommon);
 
 	// テクスチャマネージャ初期化
@@ -282,22 +300,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ===== スプライト共通処理 =====
 
+	// SpriteCommonポインタ作成
 	SpriteCommon *spriteCommon = nullptr;
 
-	// スプライト共通部の初期化
-	spriteCommon = new SpriteCommon;
+	// スプライト共通部初期化（描画に必要）
+	spriteCommon = new SpriteCommon();
 	spriteCommon->Initialize(dxCommon);
 
 
 	// ===== オーディオ（XAudio2） =====
 
+	// XAudio2エンジン生成
 	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 	IXAudio2MasteringVoice *masterVoice = nullptr;
 
-	// XAudio2エンジン生成
 	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
 
-	// マスターボイス生成
+	// マスターボイス生成（音声出力のルート）
 	result = xAudio2->CreateMasteringVoice(&masterVoice);
 
 	// 音声データ読み込み
@@ -309,17 +328,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ===== 入力処理 =====
 
-	// Inputポインタ
+	// Inputポインタ作成
 	Input *input = nullptr;
 
-	// 入力初期化
+	// 入力初期化（ウィンドウ情報を渡す）
 	input = new Input();
 	input->Initialize(winApp);
-
-	Object3dCommon *object3dCommon = nullptr;
-	// 3Dオブジェクト共通部の初期化
-	object3dCommon = new Object3dCommon;
-	object3dCommon->Initialize(dxCommon);
 
 #pragma endregion
 
@@ -344,7 +358,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// スプライト初期化
 		sprite->Initialize(spriteCommon, textureFile);
 
-		// 反転設定（左右・上下ともになし）
+		// 反転設定（左右・上下ともなし）
 		sprite->SetIsFlipX(false);
 		sprite->SetIsFlipY(false);
 
@@ -352,36 +366,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		sprite->SetTextureLeftTop({ 0.0f, 0.0f });
 		sprite->SetTextureSize({ 64.0f, 64.0f });
 
-		// スプライトの表示サイズ
+		// スプライト表示サイズ
 		sprite->SetSize({ 64.0f, 64.0f });
 
-		// 表示位置（横方向に等間隔で配置）
+		// 表示位置（横方向に等間隔に配置）
 		sprite->SetPosition({ 100.0f + i * 200.0f, 100.0f });
 
 		// 管理配列に追加
 		sprites.push_back(sprite);
 	}
 
-
 	// ===== 表示・ライティング切り替え用フラグ =====
 
-	// ライティング制御
+	// ライティング制御フラグ
 	bool useLighting = false;
 	bool useLightingTriangle = false;
 	bool useLightingSphere = false;
 
-	// 表示対象切り替え
+	// 表示対象切り替えフラグ
 	bool showModelData = true;
 	bool showTriangle = false;
 	bool showSphere = false;
 	bool showSprite = false;
 
+	// 3Dモデルは1つだけ作る
+	Model *model = new Model();
+	model->Initialize(modelCommon);
 
-	// ===== 3Dオブジェクト生成 =====
-	Object3d *object3d = new Object3d();
+	float offsetX = -2.0f;
 
-	// Object3dの初期化（モデル・行列・定数バッファなどの準備）
-	object3d->Initialize(object3dCommon);
+	// Object3dを複数作る
+	std::vector<Object3d *> objects;
+	for (int i = 0; i < 2; ++i) {
+		Object3d *obj = new Object3d();
+		obj->Initialize(object3dCommon);
+		obj->SetModel(model);
+
+		obj->SetTranslate({ offsetX + float(i * 4), 0.0f, 0.0f });
+		obj->SetRotate({ 0.0f, 0.0f, 0.0f });
+		obj->SetScale({ 1.0f, 1.0f, 1.0f });
+
+		objects.push_back(obj);
+	}
 
 #pragma endregion
 
@@ -823,7 +849,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	#pragma region 更新: 3D Object (ModelData)
 
-		object3d->Update();
+		for (size_t i = 0; i < objects.size(); ++i) {
+			objects[i]->Update();
+		}
 
 	#pragma endregion
 
@@ -845,26 +873,42 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	#ifdef USE_IMGUI
 		ImGui::Begin("Settings");
 
-		static int current = 0;
-		ImGui::SliderInt("Sprite Index", &current, 0, static_cast<int>(sprites.size()) - 1);
-
-		Sprite *sprite = sprites[current];
+		// スプライト選択＆操作
+		static int currentSprite = 0;
+		ImGui::SliderInt("Sprite Index", &currentSprite, 0, static_cast<int>(sprites.size()) - 1);
+		Sprite *sprite = sprites[currentSprite];
 
 		Vector2 size = sprite->GetSize();
 		float rotation = sprite->GetRotation();
 		Vector2 position = sprite->GetPosition();
 		Vector4 color = sprite->GetColor();
 
-		ImGui::DragFloat2("S", &size.x, 1.0f, 0.0f, 1000.0f);
-		ImGui::SliderAngle("R", &rotation);
-		ImGui::DragFloat2("T", &position.x, 1.0f);
-		ImGui::ColorEdit3("Color", &color.x);
+		ImGui::DragFloat2("Sprite Size", &size.x, 1.0f, 0.0f, 1000.0f);
+		ImGui::SliderAngle("Sprite Rotation", &rotation);
+		ImGui::DragFloat2("Sprite Position", &position.x, 1.0f);
+		ImGui::ColorEdit3("Sprite Color", &color.x);
 
-		// 変更を反映
 		sprite->SetSize(size);
 		sprite->SetRotation(rotation);
 		sprite->SetPosition(position);
 		sprite->SetColor(color);
+
+		// 3Dオブジェクト選択＆操作
+		static int currentObject = 0;
+		ImGui::SliderInt("3D Object Index", &currentObject, 0, static_cast<int>(objects.size()) - 1);
+		Object3d *obj = objects[currentObject];
+
+		Vector3 scale = obj->GetScale();
+		Vector3 rotate = obj->GetRotate();
+		Vector3 translate = obj->GetTranslate();
+
+		ImGui::DragFloat3("3D Scale", &scale.x, 0.01f, 0.0f, 10.0f);
+		ImGui::DragFloat3("3D Rotation", &rotate.x, 0.5f, -360.0f, 360.0f);
+		ImGui::DragFloat3("3D Translation", &translate.x, 0.1f);
+
+		obj->SetScale(scale);
+		obj->SetRotate(rotate);
+		obj->SetTranslate(translate);
 
 		ImGui::End();
 	#endif
@@ -911,11 +955,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 3Dオブジェクトの描画準備。3Dオブジェクトの描画に共通のグラフィックスコマンドを積む
 		object3dCommon->SetCommonRenderSetting();
 
-		#pragma region 描画: 3D Object (ModelData)
+	#pragma region 描画: 3D Object (ModelData)
 
-		object3d->Draw();
+		for (size_t i = 0; i < objects.size(); ++i) {
+			objects[i]->Draw();
+		}
 
-		#pragma endregion
+	#pragma endregion
 
 		//#pragma region 描画: 3D Object (Triangle)
 
@@ -983,15 +1029,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region Object解放
 
+	// モデル関連の解放
+	delete model;
+	model = nullptr;
+
+	delete modelCommon;
+	modelCommon = nullptr;
+
 	// ===== 3Dオブジェクト =====
-	delete object3d;
-	object3d = nullptr;
+	for (Object3d *object : objects) {
+		delete object;
+	}
+	objects.clear();
 
 	delete object3dCommon;
 	object3dCommon = nullptr;
 
-
 	// ===== スプライト =====
+	// スプライト配列の中身を順に解放してからクリア
 	for (Sprite *sprite : sprites) {
 		delete sprite;
 	}
@@ -1000,10 +1055,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete spriteCommon;
 	spriteCommon = nullptr;
 
-
 	// ===== テクスチャ管理 =====
 	TextureManager::GetInstance()->Finalize();
-
 
 	// ===== ImGui =====
 #ifdef USE_IMGUI
@@ -1012,21 +1065,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui::DestroyContext();
 #endif
 
-
 	// ===== 入力 =====
 	delete input;
 	input = nullptr;
 
-
 	// ===== オーディオ =====
 	SoundUnload(&soundData1);
-	xAudio2.Reset();
-
+	xAudio2.Reset();  // ComPtrのリセットで解放
 
 	// ===== DirectX =====
 	delete dxCommon;
 	dxCommon = nullptr;
-
 
 	// ===== WinApp =====
 	winApp->Finalize();
