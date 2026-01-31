@@ -44,6 +44,7 @@ public: // メンバ関数
 
 	// 更新
 	void Update();
+
 	// 描画
 	void Draw();
 
@@ -107,8 +108,6 @@ private:
 
 	math::Transform transform;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource;
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource;
 	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU {};
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU {};
 

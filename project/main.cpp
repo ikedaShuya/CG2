@@ -16,7 +16,6 @@
 #include "SpriteCommon.h"
 #include "Sprite.h"
 #include "MathFunctions.h"
-#include "Light.h"
 #include "TextureManager.h"
 #include "Object3dCommon.h"
 #include "Object3d.h"
@@ -34,18 +33,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #endif
 
 using namespace math;
-using namespace light;
-
-struct MaterialData
-{
-	std::string textureFilePath;
-};
-
-//struct ModelData
-//{
-//	std::vector<VertexData> vertices;
-//	MaterialData material;
-//};
 
 // チャンクヘッダ
 struct ChunkHeader
@@ -235,113 +222,6 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS *exception) {
 
 #pragma endregion
 
-//#pragma region AssetLoading
-//
-//MaterialData LoadMaterialTemplateFile(const std::string &directoryPath, const std::string &filename)
-//{
-//	//----中で必要となる変数の宣言----
-//	MaterialData materialData; // 構築するMaterialData
-//	std::string line; // ファイルから読んだ1行を格納するもの
-//
-//	//----ファイルを開く----
-//	std::ifstream file(directoryPath + "/" + filename); // ファイルを開く
-//	assert(file.is_open()); // とりあえず開かなかったら止める
-//
-//	//----ファイルを読み込んで、MaterialDataを構築する----
-//	while (std::getline(file, line)) {
-//		std::string identifier;
-//		std::istringstream s(line);
-//		s >> identifier;
-//
-//		// identiffierに応じた処理
-//		if (identifier == "map_Kd") {
-//			std::string textureFilename;
-//			s >> textureFilename;
-//			// 連結してファイルパスにする
-//			materialData.textureFilePath = directoryPath + "/" + textureFilename;
-//		}
-//	}
-//
-//	//----MaterialDataを返す----
-//	return materialData;
-//}
-//
-//ModelData LoadObjFile(const std::string &directoryPath, const std::string &filename)
-//{
-//	//----必要な変数宣言----
-//	ModelData modelData; // 構築するModelData
-//	std::vector<Vector4> positions; // 位置
-//	std::vector<Vector3> normals; // 法線
-//	std::vector<Vector2> texcoords; // テクスチャ座標
-//	std::string line; // ファイルから読んだ1行を格納するもの
-//
-//	//----ファイルを開く----
-//	std::ifstream file(directoryPath + "/" + filename); // ファイルを開く
-//	assert(file.is_open()); // とりあえず開けなかったら止める
-//
-//	//----ファイルを読み込んで、ModelDataを構築していく----
-//	while (std::getline(file, line)) {
-//		std::string identifier;
-//		std::istringstream s(line);
-//		s >> identifier; // 先頭の識別子を読む
-//
-//		// identifierに応じた処理
-//		if (identifier == "v") {
-//			Vector4 position;
-//			s >> position.x >> position.y >> position.z;
-//			position.x *= -1.0f;
-//			position.w = 1.0f;
-//			positions.push_back(position);
-//		} else if (identifier == "vt") {
-//			Vector2 texcoord;
-//			s >> texcoord.x >> texcoord.y;
-//			texcoord.y = 1.0f - texcoord.y;
-//			texcoords.push_back(texcoord);
-//		} else if (identifier == "vn") {
-//			Vector3 normal;
-//			s >> normal.x >> normal.y >> normal.z;
-//			normal.x *= -1.0f;
-//			normals.push_back(normal);
-//		} else if (identifier == "f") {
-//
-//			VertexData triangle[3];
-//			// 面は三角形限定。その他は未対応
-//			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-//				std::string vertexDefinition;
-//				s >> vertexDefinition;
-//				// 頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
-//				std::istringstream v(vertexDefinition);
-//				uint32_t elementIndices[3];
-//				for (int32_t element = 0; element < 3; ++element) {
-//					std::string index;
-//					std::getline(v, index, '/'); // /区切りでインデックスを読んでいく
-//					elementIndices[element] = std::stoi(index);
-//				}
-//				// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
-//				Vector4 position = positions[elementIndices[0] - 1];
-//				Vector2 texcoord = texcoords[elementIndices[1] - 1];
-//				Vector3 normal = normals[elementIndices[2] - 1];
-//				triangle[faceVertex] = { position,texcoord,normal };
-//			}
-//			// 頂点を逆順で登録することで、回り順を逆にする
-//			modelData.vertices.push_back(triangle[2]);
-//			modelData.vertices.push_back(triangle[1]);
-//			modelData.vertices.push_back(triangle[0]);
-//		} else if (identifier == "mtllib") {
-//			// materialTemplateLibraryファイルの名前を取得する
-//			std::string materialFilename;
-//			s >> materialFilename;
-//			// 基本的にobjファイルと同一階層にmtlは存在させるので、ディレクトリ名とファイル名を渡す
-//			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
-//		}
-//	}
-//
-//	//----ModelDataを返す----
-//	return modelData;
-//}
-//
-//#pragma endregion
-
 // Windowsアプリでのエントリーポイント（main関数）
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -501,7 +381,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Object3d *object3d = new Object3d();
 
 	// Object3dの初期化（モデル・行列・定数バッファなどの準備）
-	object3d->Initialize();
+	object3d->Initialize(object3dCommon);
 
 #pragma endregion
 
@@ -941,6 +821,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			transform.rotate.y += 0.01f;
 		}*/
 
+	#pragma region 更新: 3D Object (ModelData)
+
+		object3d->Update();
+
+	#pragma endregion
+
 	#pragma region 更新: 2D Object (Sprite)
 
 		for (uint32_t i = 0; i < sprites.size(); ++i) {
@@ -982,19 +868,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::End();
 	#endif
-
-		//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (ModelData)
-
-		//	//transform.rotate.y += 0.01f;
-		//	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-		//	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-		//	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-		//	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-		//	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-		//	wvpData->WVP = worldViewProjectionMatrix;
-		//	wvpData->World = worldMatrix;
-
-		//#pragma endregion
 
 		//#pragma region ワールド・ビュー・プロジェクション行列計算: 3D Object (Triangle)
 
@@ -1038,26 +911,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 3Dオブジェクトの描画準備。3Dオブジェクトの描画に共通のグラフィックスコマンドを積む
 		object3dCommon->SetCommonRenderSetting();
 
-		//#pragma region 描画: 3D Object (ModelData)
+		#pragma region 描画: 3D Object (ModelData)
 
-		//	if (showModelData) {
+		object3d->Draw();
 
-		//		dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
-		//		// 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけばいい
-		//		dxCommon->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//		// マテリアルCBufferの場所を設定
-		//		dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-		//		// wvp用のCBufferの場所を設定
-		//		dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-		//		// SRVのDescriptorTableの先頭を設定。2はrootParameter[2]である。
-		//		dxCommon->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-		//		dxCommon->GetCommandList()->SetGraphicsRootConstantBufferView(3, resourceDirectionalLight->GetGPUVirtualAddress());
-
-		//		dxCommon->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
-
-		//	}
-
-		//#pragma endregion
+		#pragma endregion
 
 		//#pragma region 描画: 3D Object (Triangle)
 
