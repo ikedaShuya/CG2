@@ -3,6 +3,7 @@
 #include "DirectXCommon.h"
 #include "TextureManager.h"
 #include "Model.h"
+#include "ModelManager.h"
 
 using namespace math;
 
@@ -81,4 +82,10 @@ void Object3d::CreateDirectionalLight()
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intensity = 1.0f;
+}
+
+void Object3d::SetModel(const std::string &filePath)
+{
+	// モデルを検索してセットする
+	model = ModelManager::GetInstance()->FindModel(filePath);
 }

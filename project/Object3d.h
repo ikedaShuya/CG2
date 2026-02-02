@@ -72,8 +72,6 @@ public: // メンバ関数
 	void Draw();
 
 	// ===== リソース生成 =====
-	void CreateVertexBuffer(const std::vector<VertexData> &vertices);
-	void CreateMaterialResource();
 	void CreateTransformationMatrixResource();
 	void CreateDirectionalLight();
 
@@ -89,6 +87,8 @@ public: // メンバ関数
 	const math::Vector3 &GetScale() const { return transform.scale; }
 	const math::Vector3 &GetRotate() const { return transform.rotate; }
 	const math::Vector3 &GetTranslate() const { return transform.translate; }
+
+	void SetModel(const std::string &filePath);
 
 private:
 

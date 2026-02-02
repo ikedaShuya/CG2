@@ -116,7 +116,7 @@ private:
 	math::Vector2 size_ = { 128.0f,128.0f };
 	// テクスチャ番号
 	uint32_t textureIndex = 0;
-	math::Vector2 anchorPoint = { 0.5f,0.5f };
+	math::Vector2 anchorPoint = { 0.0f,0.0f };
 
 	// 左右フリップ
 	bool isFlipX_ = false;
@@ -126,7 +126,7 @@ private:
 	// テクスチャ左上座標
 	math::Vector2 textureLeftTop = { 0.0f,0.0f };
 	// テクスチャ切り出しサイズ
-	math::Vector2 textureSize = { 100.0f,100.0f };
+	math::Vector2 textureSize = { 512.0f,512.0f };
 
 	// テクスチャサイズをイメージに合わせる
 	void AdjustTextureSize();

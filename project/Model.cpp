@@ -6,13 +6,13 @@
 #include <sstream>
 #include <cassert>
 
-void Model::Initialize(ModelCommon *modelCommon)
+void Model::Initialize(ModelCommon *modelCommon, const std::string &directorypath, const std::string &filename)
 {
 	// ===== 共通部の保持 =====
 	this->modelCommon_ = modelCommon;
 
 	// ===== モデル読み込み =====
-	modelData_ = LoadObjFile("resources/models/plane", "plane.obj");
+	modelData_ = LoadObjFile(directorypath, filename);
 
 	CreateVertexBuffer(modelData_.vertices);
 	CreateMaterialResource();
