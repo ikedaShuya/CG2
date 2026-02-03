@@ -22,6 +22,7 @@
 #include "Model.h"
 #include "ModelCommon.h"
 #include "ModelManager.h"
+#include "Camera.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -300,6 +301,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region 最初のシーンの初期化
 
+	// ===== カメラ生成 =====
+	Camera *camera = new Camera();
+
+	// カメラの向き
+	camera->SetRotate({ 0.0f, 0.0f, 0.0f });
+
+	// カメラの位置
+	camera->SetTranslate({ 0.0f, 0.0f, -10.0f });
+
+	// デフォルトカメラとして設定
+	object3dCommon->SetDefaultCamera(camera);
+
 	// ===== モデルのロード =====
 	ModelManager::GetInstance()->LoadModel("resources/models/plane/plane.obj"); 
 	ModelManager::GetInstance()->LoadModel("resources/models/bunny/bunny.obj");
@@ -361,6 +374,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 	#pragma region 更新処理
+
+		camera->Update();
 
 		// 入力の更新
 		input->Update();
@@ -543,6 +558,44 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (ImGui::DragFloat2("Texture Size", texSizeArr, 1.0f, 1.0f, 2048.0f))
 			{
 				uvCheckerSprite->SetTextureSize({ texSizeArr[0], texSizeArr[1] });
+			}
+		}
+
+		if (ImGui::CollapsingHeader("Camera"))
+		{
+			// 位置
+			math::Vector3 camTranslate = camera->GetTranslate();
+			if (ImGui::DragFloat3("Translate##Camera", &camTranslate.x, 1.0f))
+			{
+				camera->SetTranslate(camTranslate);
+			}
+
+			// 回転
+			math::Vector3 camRotate = camera->GetRotate();
+			if (ImGui::DragFloat3("Rotate##Camera", &camRotate.x, 0.5f))
+			{
+				camera->SetRotate(camRotate);
+			}
+
+			// FOV
+			float fovY = camera->GetFovY();
+			if (ImGui::DragFloat("FovY", &fovY, 0.01f, 0.1f, 3.14f))
+			{
+				camera->SetFovY(fovY);
+			}
+
+			// Near / Far
+			float nearZ = camera->GetNearClip();
+			float farZ = camera->GetFarClip();
+
+			if (ImGui::DragFloat("Near", &nearZ, 0.1f, 0.01f, 1000.0f))
+			{
+				camera->SetNearClip(nearZ);
+			}
+
+			if (ImGui::DragFloat("Far", &farZ, 10.0f, 10.0f, 100000.0f))
+			{
+				camera->SetFarClip(farZ);
 			}
 		}
 

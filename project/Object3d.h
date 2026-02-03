@@ -8,6 +8,7 @@
 class Object3dCommon;
 class DirectXCommon;
 class Model;
+class Camera;
 
 // 3Dオブジェクト
 class Object3d
@@ -90,6 +91,9 @@ public: // メンバ関数
 
 	void SetModel(const std::string &filePath);
 
+	// setter 
+	void SetCamera(Camera *camera) { this->camera = camera; }
+
 private:
 
 	// ===== 共通オブジェクト =====
@@ -117,4 +121,6 @@ private:
 	math::Transform cameraTransform;
 
 	Model *model = nullptr;
+
+	Camera *camera = nullptr;
 };

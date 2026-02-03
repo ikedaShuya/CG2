@@ -4,12 +4,14 @@
 #include "TextureManager.h"
 #include "Model.h"
 #include "ModelManager.h"
+#include "Camera.h"
 
 using namespace math;
 
 void Object3d::Initialize(Object3dCommon *object3dCommon)
 {
 	this->object3dCommon = object3dCommon;
+	this->camera = object3dCommon->GetDefaultCamera();
 
 	// ===== GPUリソース生成 =====
 	CreateTransformationMatrixResource();
@@ -34,16 +36,18 @@ void Object3d::Update()
 	// ===== ワールド行列 =====
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
-	// ===== ビュー行列（カメラ） =====
-	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-
-	// ===== 射影行列 =====
-	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+	// ===== WVP行列 =====
+	Matrix4x4 worldViewProjectionMatrix;
+	if (camera) {
+		const Matrix4x4 &viewProjectionMatrix = camera->GetViewProjectionMatrix();
+		worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
+	} else {
+		worldViewProjectionMatrix = worldMatrix;
+	}
 
 	// ===== 定数バッファへ反映 =====
-	transformationMatrixData->WVP = worldMatrix * viewMatrix * projectionMatrix;
 	transformationMatrixData->World = worldMatrix;
+	transformationMatrixData->WVP = worldViewProjectionMatrix;
 }
 
 void Object3d::Draw()
