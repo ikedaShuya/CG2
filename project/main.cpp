@@ -23,6 +23,7 @@
 #include "ModelCommon.h"
 #include "ModelManager.h"
 #include "Camera.h"
+#include "SrvManager.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -259,43 +260,57 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	WinApp *winApp = new WinApp();
 	winApp->Initialize();
 
+
 	// ===== DirectX関連 =====
 	DirectXCommon *dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
 
-	// ===== 3Dオブジェクト共通部初期化 =====
+
+	// ===== SRVマネージャ =====
+	SrvManager *srvManager = new SrvManager();
+	srvManager->Initialize(dxCommon);
+
+
+	// ===== テクスチャ管理 =====
+	TextureManager *textureManager = TextureManager::GetInstance();
+	textureManager->Initialize(dxCommon, srvManager);
+
+
+	// ===== 3Dオブジェクト共通部 =====
 	Object3dCommon *object3dCommon = new Object3dCommon();
 	object3dCommon->Initialize(dxCommon);
 
-	// ===== モデル共通部初期化 =====
+
+	// ===== モデル共通部 =====
 	ModelCommon *modelCommon = new ModelCommon();
 	modelCommon->Initialize(dxCommon);
 
-	// ===== テクスチャ管理 =====
-	auto textureManager = TextureManager::GetInstance();
-	textureManager->SetDirectXCommon(dxCommon);
-	textureManager->Initialize();
 
 	// ===== スプライト共通処理 =====
 	SpriteCommon *spriteCommon = new SpriteCommon();
 	spriteCommon->Initialize(dxCommon);
 
-	// ===== オーディオ（XAudio2）初期化 =====
-	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
-	IXAudio2MasteringVoice *masterVoice = nullptr;
-	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
-	result = xAudio2->CreateMasteringVoice(&masterVoice);
 
-	// ===== サウンド再生 =====
-	SoundData soundData1 = SoundLoadWave("resources/audio/Alarm02.wav");
-	SoundPlayWave(xAudio2.Get(), soundData1);
+	// ===== 3Dモデルマネージャ =====
+	ModelManager::GetInstance()->Initialize(dxCommon);
+
 
 	// ===== 入力処理 =====
 	Input *input = new Input();
 	input->Initialize(winApp);
 
-	// ===== 3Dモデルマネージャー初期化 =====
-	ModelManager::GetInstance()->Initialize(dxCommon);
+
+	// ===== オーディオ（XAudio2） =====
+	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
+	IXAudio2MasteringVoice *masterVoice = nullptr;
+
+	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
+	result = xAudio2->CreateMasteringVoice(&masterVoice);
+
+
+	// ===== サウンド再生 =====
+	SoundData soundData1 = SoundLoadWave("resources/audio/Alarm02.wav");
+	SoundPlayWave(xAudio2.Get(), soundData1);
 
 #pragma endregion
 
@@ -314,7 +329,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	object3dCommon->SetDefaultCamera(camera);
 
 	// ===== モデルのロード =====
-	ModelManager::GetInstance()->LoadModel("resources/models/plane/plane.obj"); 
+	ModelManager::GetInstance()->LoadModel("resources/models/plane/plane.obj");
 	ModelManager::GetInstance()->LoadModel("resources/models/bunny/bunny.obj");
 
 	// ===== Object3d インスタンス生成・初期化 =====
@@ -436,181 +451,182 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	#pragma endregion
 
-	#ifdef USE_IMGUI
-	#pragma region ImGui操作UI
+		//#ifdef USE_IMGUI
+		//#pragma region ImGui操作UI
 
-		// フレーム開始
-		ImGui_ImplDX12_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
+		//	// フレーム開始
+		//	ImGui_ImplDX12_NewFrame();
+		//	ImGui_ImplWin32_NewFrame();
+		//	ImGui::NewFrame();
 
-		ImGui::Begin("Control Panel");
+		//	ImGui::Begin("Control Panel");
 
-		if (ImGui::CollapsingHeader("Plane Object"))
-		{
-			// 位置
-			math::Vector3 translate = planeObject->GetTranslate();
-			if (ImGui::DragFloat3("Translate##Plane", &translate.x, 0.1f))
-			{
-				planeObject->SetTranslate(translate);
-			}
+		//	if (ImGui::CollapsingHeader("Plane Object"))
+		//	{
+		//		// 位置
+		//		math::Vector3 translate = planeObject->GetTranslate();
+		//		if (ImGui::DragFloat3("Translate##Plane", &translate.x, 0.1f))
+		//		{
+		//			planeObject->SetTranslate(translate);
+		//		}
 
-			// 回転
-			math::Vector3 rotate = planeObject->GetRotate();
-			if (ImGui::DragFloat3("Rotate##Plane", &rotate.x, 1.0f))
-			{
-				planeObject->SetRotate(rotate);
-			}
+		//		// 回転
+		//		math::Vector3 rotate = planeObject->GetRotate();
+		//		if (ImGui::DragFloat3("Rotate##Plane", &rotate.x, 1.0f))
+		//		{
+		//			planeObject->SetRotate(rotate);
+		//		}
 
-			// スケール
-			math::Vector3 scale = planeObject->GetScale();
-			if (ImGui::DragFloat3("Scale##Plane", &scale.x, 0.01f, 0.01f, 10.0f))
-			{
-				planeObject->SetScale(scale);
-			}
-		}
+		//		// スケール
+		//		math::Vector3 scale = planeObject->GetScale();
+		//		if (ImGui::DragFloat3("Scale##Plane", &scale.x, 0.01f, 0.01f, 10.0f))
+		//		{
+		//			planeObject->SetScale(scale);
+		//		}
+		//	}
 
-		if (ImGui::CollapsingHeader("Bunny Object"))
-		{
-			math::Vector3 translate = bunnyObject->GetTranslate();
-			if (ImGui::DragFloat3("Translate##Bunny", &translate.x, 0.1f))
-			{
-				bunnyObject->SetTranslate(translate);
-			}
+		//	if (ImGui::CollapsingHeader("Bunny Object"))
+		//	{
+		//		math::Vector3 translate = bunnyObject->GetTranslate();
+		//		if (ImGui::DragFloat3("Translate##Bunny", &translate.x, 0.1f))
+		//		{
+		//			bunnyObject->SetTranslate(translate);
+		//		}
 
-			math::Vector3 rotate = bunnyObject->GetRotate();
-			if (ImGui::DragFloat3("Rotate##Bunny", &rotate.x, 1.0f))
-			{
-				bunnyObject->SetRotate(rotate);
-			}
+		//		math::Vector3 rotate = bunnyObject->GetRotate();
+		//		if (ImGui::DragFloat3("Rotate##Bunny", &rotate.x, 1.0f))
+		//		{
+		//			bunnyObject->SetRotate(rotate);
+		//		}
 
-			math::Vector3 scale = bunnyObject->GetScale();
-			if (ImGui::DragFloat3("Scale##Bunny", &scale.x, 0.01f, 0.01f, 10.0f))
-			{
-				bunnyObject->SetScale(scale);
-			}
-		}
+		//		math::Vector3 scale = bunnyObject->GetScale();
+		//		if (ImGui::DragFloat3("Scale##Bunny", &scale.x, 0.01f, 0.01f, 10.0f))
+		//		{
+		//			bunnyObject->SetScale(scale);
+		//		}
+		//	}
 
-		if (ImGui::CollapsingHeader("UV Checker Sprite"))
-		{
-			// スプライトの位置（2D）
-			math::Vector2 pos = uvCheckerSprite->GetPosition();
-			float posArray[2] = { pos.x, pos.y };
-			if (ImGui::DragFloat2("Position", posArray, 1.0f))
-			{
-				uvCheckerSprite->SetPosition({ posArray[0], posArray[1] });
-			}
+		//	if (ImGui::CollapsingHeader("UV Checker Sprite"))
+		//	{
+		//		// スプライトの位置（2D）
+		//		math::Vector2 pos = uvCheckerSprite->GetPosition();
+		//		float posArray[2] = { pos.x, pos.y };
+		//		if (ImGui::DragFloat2("Position", posArray, 1.0f))
+		//		{
+		//			uvCheckerSprite->SetPosition({ posArray[0], posArray[1] });
+		//		}
 
-			// 回転（float）
-			float rotation = uvCheckerSprite->GetRotation();
-			if (ImGui::DragFloat("Rotation", &rotation, 1.0f))
-			{
-				uvCheckerSprite->SetRotation(rotation);
-			}
+		//		// 回転（float）
+		//		float rotation = uvCheckerSprite->GetRotation();
+		//		if (ImGui::DragFloat("Rotation", &rotation, 1.0f))
+		//		{
+		//			uvCheckerSprite->SetRotation(rotation);
+		//		}
 
-			// サイズ
-			math::Vector2 size = uvCheckerSprite->GetSize();
-			float sizeArray[2] = { size.x, size.y };
-			if (ImGui::DragFloat2("Size", sizeArray, 1.0f, 1.0f, 2048.0f))
-			{
-				uvCheckerSprite->SetSize({ sizeArray[0], sizeArray[1] });
-			}
+		//		// サイズ
+		//		math::Vector2 size = uvCheckerSprite->GetSize();
+		//		float sizeArray[2] = { size.x, size.y };
+		//		if (ImGui::DragFloat2("Size", sizeArray, 1.0f, 1.0f, 2048.0f))
+		//		{
+		//			uvCheckerSprite->SetSize({ sizeArray[0], sizeArray[1] });
+		//		}
 
-			// アンカーポイント
-			math::Vector2 anchor = uvCheckerSprite->GetAnchoPoint();
-			float anchorArray[2] = { anchor.x, anchor.y };
-			if (ImGui::DragFloat2("AnchorPoint", anchorArray, 0.01f, 0.0f, 1.0f))
-			{
-				uvCheckerSprite->SetAnchorPoint({ anchorArray[0], anchorArray[1] });
-			}
+		//		// アンカーポイント
+		//		math::Vector2 anchor = uvCheckerSprite->GetAnchoPoint();
+		//		float anchorArray[2] = { anchor.x, anchor.y };
+		//		if (ImGui::DragFloat2("AnchorPoint", anchorArray, 0.01f, 0.0f, 1.0f))
+		//		{
+		//			uvCheckerSprite->SetAnchorPoint({ anchorArray[0], anchorArray[1] });
+		//		}
 
-			// 色 (Vector4)
-			math::Vector4 color = uvCheckerSprite->GetColor();
-			float colorArray[4] = { color.x, color.y, color.z, color.w };
-			if (ImGui::ColorEdit4("Color", colorArray))
-			{
-				uvCheckerSprite->SetColor({ colorArray[0], colorArray[1], colorArray[2], colorArray[3] });
-			}
+		//		// 色 (Vector4)
+		//		math::Vector4 color = uvCheckerSprite->GetColor();
+		//		float colorArray[4] = { color.x, color.y, color.z, color.w };
+		//		if (ImGui::ColorEdit4("Color", colorArray))
+		//		{
+		//			uvCheckerSprite->SetColor({ colorArray[0], colorArray[1], colorArray[2], colorArray[3] });
+		//		}
 
-			// テクスチャの反転設定
-			bool flipX = uvCheckerSprite->GetIsFlipX();
-			if (ImGui::Checkbox("Flip X", &flipX))
-			{
-				uvCheckerSprite->SetIsFlipX(flipX);
-			}
+		//		// テクスチャの反転設定
+		//		bool flipX = uvCheckerSprite->GetIsFlipX();
+		//		if (ImGui::Checkbox("Flip X", &flipX))
+		//		{
+		//			uvCheckerSprite->SetIsFlipX(flipX);
+		//		}
 
-			bool flipY = uvCheckerSprite->GetIsFlipY();
-			if (ImGui::Checkbox("Flip Y", &flipY))
-			{
-				uvCheckerSprite->SetIsFlipY(flipY);
-			}
+		//		bool flipY = uvCheckerSprite->GetIsFlipY();
+		//		if (ImGui::Checkbox("Flip Y", &flipY))
+		//		{
+		//			uvCheckerSprite->SetIsFlipY(flipY);
+		//		}
 
-			// テクスチャの使用領域
-			math::Vector2 texLeftTop = uvCheckerSprite->GetTextureLeftTop();
-			float texLeftTopArr[2] = { texLeftTop.x, texLeftTop.y };
-			if (ImGui::DragFloat2("Texture LeftTop", texLeftTopArr, 1.0f, 0.0f, 2048.0f))
-			{
-				uvCheckerSprite->SetTextureLeftTop({ texLeftTopArr[0], texLeftTopArr[1] });
-			}
+		//		// テクスチャの使用領域
+		//		math::Vector2 texLeftTop = uvCheckerSprite->GetTextureLeftTop();
+		//		float texLeftTopArr[2] = { texLeftTop.x, texLeftTop.y };
+		//		if (ImGui::DragFloat2("Texture LeftTop", texLeftTopArr, 1.0f, 0.0f, 2048.0f))
+		//		{
+		//			uvCheckerSprite->SetTextureLeftTop({ texLeftTopArr[0], texLeftTopArr[1] });
+		//		}
 
-			math::Vector2 texSize = uvCheckerSprite->GetTextureSize();
-			float texSizeArr[2] = { texSize.x, texSize.y };
-			if (ImGui::DragFloat2("Texture Size", texSizeArr, 1.0f, 1.0f, 2048.0f))
-			{
-				uvCheckerSprite->SetTextureSize({ texSizeArr[0], texSizeArr[1] });
-			}
-		}
+		//		math::Vector2 texSize = uvCheckerSprite->GetTextureSize();
+		//		float texSizeArr[2] = { texSize.x, texSize.y };
+		//		if (ImGui::DragFloat2("Texture Size", texSizeArr, 1.0f, 1.0f, 2048.0f))
+		//		{
+		//			uvCheckerSprite->SetTextureSize({ texSizeArr[0], texSizeArr[1] });
+		//		}
+		//	}
 
-		if (ImGui::CollapsingHeader("Camera"))
-		{
-			// 位置
-			math::Vector3 camTranslate = camera->GetTranslate();
-			if (ImGui::DragFloat3("Translate##Camera", &camTranslate.x, 1.0f))
-			{
-				camera->SetTranslate(camTranslate);
-			}
+		//	if (ImGui::CollapsingHeader("Camera"))
+		//	{
+		//		// 位置
+		//		math::Vector3 camTranslate = camera->GetTranslate();
+		//		if (ImGui::DragFloat3("Translate##Camera", &camTranslate.x, 1.0f))
+		//		{
+		//			camera->SetTranslate(camTranslate);
+		//		}
 
-			// 回転
-			math::Vector3 camRotate = camera->GetRotate();
-			if (ImGui::DragFloat3("Rotate##Camera", &camRotate.x, 0.5f))
-			{
-				camera->SetRotate(camRotate);
-			}
+		//		// 回転
+		//		math::Vector3 camRotate = camera->GetRotate();
+		//		if (ImGui::DragFloat3("Rotate##Camera", &camRotate.x, 0.5f))
+		//		{
+		//			camera->SetRotate(camRotate);
+		//		}
 
-			// FOV
-			float fovY = camera->GetFovY();
-			if (ImGui::DragFloat("FovY", &fovY, 0.01f, 0.1f, 3.14f))
-			{
-				camera->SetFovY(fovY);
-			}
+		//		// FOV
+		//		float fovY = camera->GetFovY();
+		//		if (ImGui::DragFloat("FovY", &fovY, 0.01f, 0.1f, 3.14f))
+		//		{
+		//			camera->SetFovY(fovY);
+		//		}
 
-			// Near / Far
-			float nearZ = camera->GetNearClip();
-			float farZ = camera->GetFarClip();
+		//		// Near / Far
+		//		float nearZ = camera->GetNearClip();
+		//		float farZ = camera->GetFarClip();
 
-			if (ImGui::DragFloat("Near", &nearZ, 0.1f, 0.01f, 1000.0f))
-			{
-				camera->SetNearClip(nearZ);
-			}
+		//		if (ImGui::DragFloat("Near", &nearZ, 0.1f, 0.01f, 1000.0f))
+		//		{
+		//			camera->SetNearClip(nearZ);
+		//		}
 
-			if (ImGui::DragFloat("Far", &farZ, 10.0f, 10.0f, 100000.0f))
-			{
-				camera->SetFarClip(farZ);
-			}
-		}
+		//		if (ImGui::DragFloat("Far", &farZ, 10.0f, 10.0f, 100000.0f))
+		//		{
+		//			camera->SetFarClip(farZ);
+		//		}
+		//	}
 
-		ImGui::End();
+		//	ImGui::End();
 
-		// ImGui描画コマンド生成
-		ImGui::Render();
+		//	// ImGui描画コマンド生成
+		//	ImGui::Render();
 
-	#pragma endregion
-	#endif
+		//#pragma endregion
+		//#endif
 
 	#pragma region 描画処理
 
 		// DirectX描画準備
 		dxCommon->PreDraw();
+		srvManager->PreDraw();
 
 		// スプライト描画準備
 		spriteCommon->SetupCommonDrawing();
@@ -625,10 +641,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// スプライト描画
 		uvCheckerSprite->Draw();
 
-	#ifdef USE_IMGUI
-		// ImGui描画コマンドを積む
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
-	#endif
+	//#ifdef USE_IMGUI
+	//	// ImGui描画コマンドを積む
+	//	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
+	//#endif
 
 		// 描画後処理
 		dxCommon->PostDraw();
@@ -642,6 +658,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 #pragma region 解放処理
+
+	delete srvManager;
 
 	// 3Dオブジェクト解放
 	delete bunnyObject;
@@ -668,11 +686,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// テクスチャ管理終了
 	TextureManager::GetInstance()->Finalize();
 
-#ifdef USE_IMGUI
-	ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-#endif
+//#ifdef USE_IMGUI
+//	ImGui_ImplDX12_Shutdown();
+//	ImGui_ImplWin32_Shutdown();
+//	ImGui::DestroyContext();
+//#endif
 
 	// 入力解放
 	delete input;

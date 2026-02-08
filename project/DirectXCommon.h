@@ -41,7 +41,7 @@ public: // メンバ関数
 	// レンダーターゲットビューの初期化
 	void InitializeRenderTargetView();
 
-	/// <summary>
+	/*/// <summary>
 	/// SRVの指定番号のCPUデスクリプタハンドルを取得する
 	/// </summary>
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
@@ -49,7 +49,7 @@ public: // メンバ関数
 	/// <summary>
 	/// SRVの指定番号のGPUデスクリプタハンドルを取得する
 	/// </summary>
-	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);*/
 
 	/// <summary>
 	/// RTVの指定番号のCPUデスクリプタハンドルを取得する
@@ -87,7 +87,7 @@ public: // メンバ関数
 	void InitializeDXC();
 
 	// ImGuiの初期化
-	void InitializeImGui();
+	//void InitializeImGui();
 
 	// 描画前処理
 	void PreDraw();
@@ -116,9 +116,6 @@ public: // メンバ関数
 	/// </summary>
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages);
 
-	// 最大SRV数（最大テクスチャ枚数)
-	static const uint32_t kMaxSRVCount;
-
 private:
 	// DirectX12デバイス
 	Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
@@ -136,12 +133,10 @@ private:
 	// WindowsAPI
 	WinApp *winApp = nullptr;
 	// Descriptorサイズ
-	uint32_t descriptorSizeSRV;
 	uint32_t descriptorSizeRTV;
 	uint32_t descriptorSizeDSV;
 	// DescriptorHeap
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap;
 	// RTVの設定
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc {};

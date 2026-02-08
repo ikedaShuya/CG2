@@ -9,15 +9,16 @@ void Sprite::Initialize(SpriteCommon *spriteCommon, std::string textureFilePath)
 {
 	// 引数で受け取ってメンバ変数に記録する
 	this->spriteCommon_ = spriteCommon;
+	textureFilePath_ = textureFilePath;
 
-	TextureManager::GetInstance()->LoadTexture(textureFilePath);
+	TextureManager::GetInstance()->LoadTexture(textureFilePath_);	
 
 	InitializeBuffers();
 	InitializeMaterial();
 	InitializeTransformationMatrixResource();
 
 	// 単位行列を書き込んでおく
-	textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+	srvIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath_);
 
 	AdjustTextureSize();
 }
@@ -25,7 +26,7 @@ void Sprite::Initialize(SpriteCommon *spriteCommon, std::string textureFilePath)
 void Sprite::ChangeTexture(std::string textureFilePath)
 {
 	// 読み込んだテクスチャのインデックスを取得してメンバ変数に保存
-	textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+	srvIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 }
 
 void Sprite::Update()
@@ -47,7 +48,7 @@ void Sprite::Update()
 	}
 
 	const DirectX::TexMetadata &metadata =
-		TextureManager::GetInstance()->GetMetaData(textureIndex);
+		TextureManager::GetInstance()->GetMetaData(textureFilePath_);
 	float tex_left = textureLeftTop.x / metadata.width;
 	float tex_right = (textureLeftTop.x + textureSize.x) / metadata.width;
 	float tex_top = textureLeftTop.y / metadata.height;
@@ -102,7 +103,7 @@ void Sprite::Draw()
 	// TransformationMatrixCBufferの場所を設定
 	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 
-	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
+	spriteCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureFilePath_));
 	//描画!(DrawCall/ドローコール)6個のインデックスを使用し1つのインスタンスを描画。その他は当面0で良い
 	spriteCommon_->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
@@ -186,7 +187,7 @@ void Sprite::InitializeTransformationMatrixResource()
 void Sprite::AdjustTextureSize()
 {
 	// テクスチャメタデータを取得
-	const DirectX::TexMetadata &metadata = TextureManager::GetInstance()->GetMetaData(textureIndex);
+	const DirectX::TexMetadata &metadata = TextureManager::GetInstance()->GetMetaData(textureFilePath_);
 
 	textureSize.x = static_cast<float>(metadata.width);
 	textureSize.y = static_cast<float>(metadata.height);
