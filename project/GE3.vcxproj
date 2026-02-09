@@ -156,8 +156,16 @@ xcopy /Y /D "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxil.dl
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Math.cpp" />
+    <ClCompile Include="MathFunctions.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ModelCommon.cpp" />
+    <ClCompile Include="ModelManager.cpp" />
+    <ClCompile Include="Object3d.cpp" />
+    <ClCompile Include="Object3dCommon.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="SpriteCommon.cpp" />
     <ClCompile Include="StringUtility.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="WinApp.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -191,8 +199,17 @@ xcopy /Y /D "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxil.dl
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Logger.h" />
-    <ClInclude Include="Math.h" />
+    <ClInclude Include="MathTypes.h" />
+    <ClInclude Include="MathFunctions.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="ModelCommon.h" />
+    <ClInclude Include="ModelManager.h" />
+    <ClInclude Include="Object3d.h" />
+    <ClInclude Include="Object3dCommon.h" />
+    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="SpriteCommon.h" />
     <ClInclude Include="StringUtility.h" />
+    <ClInclude Include="TextureManager.h" />
     <ClInclude Include="WinApp.h" />
   </ItemGroup>
   <ItemGroup>

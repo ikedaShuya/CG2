@@ -116,12 +116,8 @@ public: // メンバ関数
 	/// </summary>
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource> &texture, const DirectX::ScratchImage &mipImages);
 
-	/// <summary>
-	/// テクスチャファイルの読み込み
-	/// </summary>
-	/// <param name="filePath">テクスチャファイルのパス</param>
-	/// <returns>画像イメージデータ</returns>
-	static DirectX::ScratchImage LoadTexture(const std::string &filePath);
+	// 最大SRV数（最大テクスチャ枚数)
+	static const uint32_t kMaxSRVCount;
 
 private:
 	// DirectX12デバイス
