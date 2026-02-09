@@ -127,8 +127,29 @@ void SpriteCommon::CreateGraphicsPipelineState()
 	// BlendStateの設定
 	D3D12_BLEND_DESC blendDesc {};
 	// すべての色要素を書き込む
-	blendDesc.RenderTarget[0].RenderTargetWriteMask =
-		D3D12_COLOR_WRITE_ENABLE_ALL;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	// 1. 通常アルファブレンド（透明感が出る）
+	//// ソースのアルファ値で透過させ、背景と自然に混ざる
+	//blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;        // ソースのアルファ
+	//blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;   // 1 - ソースのアルファ
+	//blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;            // 加算
+
+	// 2. 加算ブレンド（色が明るくなる）
+	// 重ねると光を足すような効果
+	/*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;*/
+
+	// 3. 乗算ブレンド（色を暗くする）
+	// 重ねると暗くなる（影や影響表現に便利）
+	/*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_DEST_COLOR;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;*/
+
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
 	//----RasterizerStateの設定を行う----
 

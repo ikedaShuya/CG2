@@ -398,6 +398,11 @@ namespace math {
 		return result;
 	}
 
+	Vector3 Normalize(const Vector3 &v) {
+		float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+		return { v.x / length, v.y / length, v.z / length };
+	}
+
 	Matrix4x4 operator*(const Matrix4x4 &m1, const Matrix4x4 &m2)
 	{
 		return Multiply(m1, m2);

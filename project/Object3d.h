@@ -14,7 +14,7 @@ class Object3d
 {
 public:
 
-	// 頂点データ
+	// 頂点データa
 	struct VertexData
 	{
 		math::Vector4 position;
@@ -87,6 +87,15 @@ public: // メンバ関数
 	const math::Vector3 &GetScale() const { return transform.scale; }
 	const math::Vector3 &GetRotate() const { return transform.rotate; }
 	const math::Vector3 &GetTranslate() const { return transform.translate; }
+
+	// DirectionalLightのgetter
+	const math::Vector3 &GetLightDirection() const { return directionalLightData->direction; }
+	float GetLightIntensity() const { return directionalLightData->intensity; }
+	const math::Vector4 &GetLightColor() const { return directionalLightData->color; }
+
+	void SetLightDirection(const math::Vector3 &dir) { directionalLightData->direction = dir; }
+	void SetLightIntensity(float intensity) { directionalLightData->intensity = intensity; }
+	void SetLightColor(const math::Vector4 &color) { directionalLightData->color = color; }
 
 	void SetModel(const std::string &filePath);
 
