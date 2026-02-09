@@ -167,6 +167,6 @@ void Model::CreateMaterialResource()
 
 	// 初期値設定
 	materialData->color = math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	materialData->enableLighting = false;
+	materialData->enableLighting = true;
 	materialData->uvTransform = math::MakeIdentity4x4();
 }

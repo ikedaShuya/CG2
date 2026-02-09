@@ -39,6 +39,9 @@ namespace math
     // 座標変換
     Vector3 ApplyTransform(const Vector3 &vector, const Matrix4x4 &matrix);
 
+    // 正規化
+    Vector3 Normalize(const Vector3 &v);
+
     // 行列の掛け算演算子
     Matrix4x4 operator*(const Matrix4x4 &m1, const Matrix4x4 &m2);
     Vector2 &operator+=(Vector2 &lhs, const Vector2 &rhs);
