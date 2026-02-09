@@ -130,4 +130,5 @@ private:
 
 	// テクスチャサイズをイメージに合わせる
 	void AdjustTextureSize();
+
 };
