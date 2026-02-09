@@ -36,10 +36,6 @@ ipch/
 *.lib
 *.exp
 
-# --- Object files ---
-*.obj
-!resources/**/*.obj
-
 # --- DirectX / Shader ---
 DirectXTex/Bin/
 DirectXTex/x64/
