@@ -301,29 +301,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region 最初のシーンの初期化
 
 	// ===== モデルのロード =====
-	// ModelManager::GetInstance()->LoadModel("resources/models/fence/plane.obj"); 
+	ModelManager::GetInstance()->LoadModel("resources/models/plane/plane.obj");
 	// ModelManager::GetInstance()->LoadModel("resources/models/bunny/bunny.obj");
-	ModelManager::GetInstance()->LoadModel("resources/models/fence/fence.obj");
+	// ModelManager::GetInstance()->LoadModel("resources/models/fence/fence.obj");
 
 	// ===== Object3d インスタンス生成・初期化 =====
-	// Object3d *planeObject = new Object3d();
+	Object3d *planeObject = new Object3d();
 	// Object3d *bunnyObject = new Object3d();
-	Object3d *fenceObject = new Object3d();
+	// Object3d *fenceObject = new Object3d();
 
-	// planeObject->Initialize(object3dCommon);
+	planeObject->Initialize(object3dCommon);
 	// bunnyObject->Initialize(object3dCommon);
-	fenceObject->Initialize(object3dCommon);
+	// fenceObject->Initialize(object3dCommon);
 
 	// ===== モデル設定 =====
-	// planeObject->SetModel("resources/models/plane/plane.obj");
+	planeObject->SetModel("resources/models/plane/plane.obj");
 	// bunnyObject->SetModel("resources/models/bunny/bunny.obj");
-	fenceObject->SetModel("resources/models/fence/fence.obj");
+	// fenceObject->SetModel("resources/models/fence/fence.obj");
 
 	// ===== Transform設定 =====
 	//// planeObject
-	//planeObject->SetTranslate({ -2.42f, -0.43f, 0.0f });
-	//planeObject->SetRotate({ 0.0f, 0.0f, 0.0f });
-	//planeObject->SetScale({ 1.0f, 1.0f, 1.0f });
+	planeObject->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	planeObject->SetRotate({ 0.0f, 0.0f, 0.0f });
+	planeObject->SetScale({ 1.0f, 1.0f, 1.0f });
 
 	//// bunnyObject
 	//bunnyObject->SetTranslate({ 2.6f, -1.46f, 0.0f });
@@ -331,9 +331,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//bunnyObject->SetScale({ 1.0f, 1.0f, 1.0f });
 
 	// fenceObject
-	fenceObject->SetTranslate({ 0.0f, 0.0f, 0.0f });
-	fenceObject->SetRotate({ 0.0f, 0.0f, 0.0f });
-	fenceObject->SetScale({ 1.0f, 1.0f, 1.0f });
+	// fenceObject->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	// fenceObject->SetRotate({ 0.0f, 0.0f, 0.0f });
+	// fenceObject->SetScale({ 1.0f, 1.0f, 1.0f });
 
 	// ===== スプライトの生成と初期化 =====
 	Sprite *uvCheckerSprite = new Sprite();
@@ -380,53 +380,56 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			const float rotateSpeed = 0.02f;
 
 			// 現在のTransform取得
-			// math::Vector3 planePos = planeObject->GetTranslate();
-			// math::Vector3 planeRot = planeObject->GetRotate();
+			math::Vector3 planePos = planeObject->GetTranslate();
+			math::Vector3 planeRot = planeObject->GetRotate();
 
-			math::Vector3 fencePos = fenceObject->GetTranslate();
-			math::Vector3 fenceRot = fenceObject->GetRotate();
+			// math::Vector3 fencePos = fenceObject->GetTranslate();
+			// math::Vector3 fenceRot = fenceObject->GetRotate();
 
 			// 前後移動
 			if (input->PushKey(DIK_W))
 			{
-				fencePos.y += moveSpeed;
+				planePos.y += moveSpeed;
 			}
 
 			if (input->PushKey(DIK_S))
 			{
-				fencePos.y -= moveSpeed;
+				planePos.y -= moveSpeed;
 			}
 
 			// 左右移動
 			if (input->PushKey(DIK_A))
 			{
-				fencePos.x -= moveSpeed;
+				planePos.x -= moveSpeed;
 			}
 
 			if (input->PushKey(DIK_D))
 			{
-				fencePos.x += moveSpeed;
+				planePos.x += moveSpeed;
 			}
 
 			// 回転（Z軸）
 			if (input->PushKey(DIK_Q))
 			{
-				fenceRot.z -= rotateSpeed;
+				planePos.z -= rotateSpeed;
 			}
 
 			if (input->PushKey(DIK_E))
 			{
-				fenceRot.z += rotateSpeed;
+				planePos.z += rotateSpeed;
 			}
 
 			// Transform反映
-			fenceObject->SetTranslate(fencePos);
-			fenceObject->SetRotate(fenceRot);
+			planeObject->SetTranslate(planePos);
+			planeObject->SetRotate(planeRot);
+
+			// fenceObject->SetTranslate(fencePos);
+			// fenceObject->SetRotate(fenceRot);
 		}
 
 		// 3Dオブジェクト更新
-		fenceObject->Update();
-		fenceObject->Update();
+		planeObject->Update();
+		// fenceObject->Update();
 
 		// スプライト更新
 		uvCheckerSprite->Update();
@@ -443,54 +446,54 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::Begin("Control Panel");
 
-		//if (ImGui::CollapsingHeader("Plane Object"))
-		//{
-		//	// 位置
-		//	math::Vector3 translate = planeObject->GetTranslate();
-		//	if (ImGui::DragFloat3("Translate##Plane", &translate.x, 0.1f))
-		//	{
-		//		planeObject->SetTranslate(translate);
-		//	}
+		if (ImGui::CollapsingHeader("Plane Object"))
+		{
+			// 位置
+			math::Vector3 translate = planeObject->GetTranslate();
+			if (ImGui::DragFloat3("Translate##Plane", &translate.x, 0.1f))
+			{
+				planeObject->SetTranslate(translate);
+			}
 
-		//	// 回転
-		//	math::Vector3 rotate = planeObject->GetRotate();
-		//	if (ImGui::DragFloat3("Rotate##Plane", &rotate.x, 1.0f))
-		//	{
-		//		planeObject->SetRotate(rotate);
-		//	}
+			// 回転
+			math::Vector3 rotate = planeObject->GetRotate();
+			if (ImGui::DragFloat3("Rotate##Plane", &rotate.x, 1.0f))
+			{
+				planeObject->SetRotate(rotate);
+			}
 
-		//	// スケール
-		//	math::Vector3 scale = planeObject->GetScale();
-		//	if (ImGui::DragFloat3("Scale##Plane", &scale.x, 0.01f, 0.01f, 10.0f))
-		//	{
-		//		planeObject->SetScale(scale);
-		//	}
+			// スケール
+			math::Vector3 scale = planeObject->GetScale();
+			if (ImGui::DragFloat3("Scale##Plane", &scale.x, 0.01f, 0.01f, 10.0f))
+			{
+				planeObject->SetScale(scale);
+			}
 
-		//	// ライト情報表示・編集
-		//	if (ImGui::TreeNode("Directional Light"))
-		//	{
-		//		math::Vector3 dir = planeObject->GetLightDirection();
-		//		if (ImGui::DragFloat3("Direction##PlaneLight", &dir.x, 0.01f, -1.0f, 1.0f))
-		//		{
-		//			planeObject->SetLightDirection(dir);
-		//		}
+			// ライト情報表示・編集
+			if (ImGui::TreeNode("Directional Light"))
+			{
+				math::Vector3 dir = planeObject->GetLightDirection();
+				if (ImGui::DragFloat3("Direction##PlaneLight", &dir.x, 0.01f, -1.0f, 1.0f))
+				{
+					planeObject->SetLightDirection(dir);
+				}
 
-		//		float intensity = planeObject->GetLightIntensity();
-		//		if (ImGui::DragFloat("Intensity##PlaneLight", &intensity, 0.01f, 0.0f, 10.0f))
-		//		{
-		//			planeObject->SetLightIntensity(intensity);
-		//		}
+				float intensity = planeObject->GetLightIntensity();
+				if (ImGui::DragFloat("Intensity##PlaneLight", &intensity, 0.01f, 0.0f, 10.0f))
+				{
+					planeObject->SetLightIntensity(intensity);
+				}
 
-		//		math::Vector4 color = planeObject->GetLightColor();
-		//		float color_f[4] = { color.x, color.y, color.z, color.w };
-		//		if (ImGui::ColorEdit4("Color##PlaneLight", color_f))
-		//		{
-		//			planeObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-		//		}
+				math::Vector4 color = planeObject->GetLightColor();
+				float color_f[4] = { color.x, color.y, color.z, color.w };
+				if (ImGui::ColorEdit4("Color##PlaneLight", color_f))
+				{
+					planeObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
+				}
 
-		//		ImGui::TreePop();
-		//	}
-		//}
+				ImGui::TreePop();
+			}
+		}
 
 		//if (ImGui::CollapsingHeader("Bunny Object"))
 		//{
@@ -541,54 +544,54 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//	}
 		//}
 
-		if (ImGui::CollapsingHeader("fence Object"))
-		{
-			// 位置
-			math::Vector3 translate = fenceObject->GetTranslate();
-			if (ImGui::DragFloat3("Translate##fence", &translate.x, 0.1f))
-			{
-				fenceObject->SetTranslate(translate);
-			}
+		//if (ImGui::CollapsingHeader("fence Object"))
+		//{
+		//	// 位置
+		//	math::Vector3 translate = fenceObject->GetTranslate();
+		//	if (ImGui::DragFloat3("Translate##fence", &translate.x, 0.1f))
+		//	{
+		//		fenceObject->SetTranslate(translate);
+		//	}
 
-			// 回転
-			math::Vector3 rotate = fenceObject->GetRotate();
-			if (ImGui::DragFloat3("Rotate##fence", &rotate.x, 1.0f))
-			{
-				fenceObject->SetRotate(rotate);
-			}
+		//	// 回転
+		//	math::Vector3 rotate = fenceObject->GetRotate();
+		//	if (ImGui::DragFloat3("Rotate##fence", &rotate.x, 1.0f))
+		//	{
+		//		fenceObject->SetRotate(rotate);
+		//	}
 
-			// スケール
-			math::Vector3 scale = fenceObject->GetScale();
-			if (ImGui::DragFloat3("Scale##fence", &scale.x, 0.01f, 0.01f, 10.0f))
-			{
-				fenceObject->SetScale(scale);
-			}
+		//	// スケール
+		//	math::Vector3 scale = fenceObject->GetScale();
+		//	if (ImGui::DragFloat3("Scale##fence", &scale.x, 0.01f, 0.01f, 10.0f))
+		//	{
+		//		fenceObject->SetScale(scale);
+		//	}
 
-			// ライト情報表示・編集
-			if (ImGui::TreeNode("Directional Light"))
-			{
-				math::Vector3 dir = fenceObject->GetLightDirection();
-				if (ImGui::DragFloat3("Direction##fenceLight", &dir.x, 0.01f, -1.0f, 1.0f))
-				{
-					fenceObject->SetLightDirection(dir);
-				}
+		//	// ライト情報表示・編集
+		//	if (ImGui::TreeNode("Directional Light"))
+		//	{
+		//		math::Vector3 dir = fenceObject->GetLightDirection();
+		//		if (ImGui::DragFloat3("Direction##fenceLight", &dir.x, 0.01f, -1.0f, 1.0f))
+		//		{
+		//			fenceObject->SetLightDirection(dir);
+		//		}
 
-				float intensity = fenceObject->GetLightIntensity();
-				if (ImGui::DragFloat("Intensity##fenceLight", &intensity, 0.01f, 0.0f, 10.0f))
-				{
-					fenceObject->SetLightIntensity(intensity);
-				}
+		//		float intensity = fenceObject->GetLightIntensity();
+		//		if (ImGui::DragFloat("Intensity##fenceLight", &intensity, 0.01f, 0.0f, 10.0f))
+		//		{
+		//			fenceObject->SetLightIntensity(intensity);
+		//		}
 
-				math::Vector4 color = fenceObject->GetLightColor();
-				float color_f[4] = { color.x, color.y, color.z, color.w };
-				if (ImGui::ColorEdit4("Color##fenceLight", color_f))
-				{
-					fenceObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-				}
+		//		math::Vector4 color = fenceObject->GetLightColor();
+		//		float color_f[4] = { color.x, color.y, color.z, color.w };
+		//		if (ImGui::ColorEdit4("Color##fenceLight", color_f))
+		//		{
+		//			fenceObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
+		//		}
 
-				ImGui::TreePop();
-			}
-		}
+		//		ImGui::TreePop();
+		//	}
+		//}
 
 		if (ImGui::CollapsingHeader("UV Checker Sprite"))
 		{
@@ -677,9 +680,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		object3dCommon->SetCommonRenderSetting();
 
 		// 3Dオブジェクト描画
-		// planeObject->Draw();
+		planeObject->Draw();
 		// bunnyObject->Draw();
-		fenceObject->Draw();
+		// fenceObject->Draw();
 
 		// スプライト描画準備
 		spriteCommon->SetupCommonDrawing();
@@ -706,14 +709,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region 解放処理
 
 	// 3Dオブジェクト解放
-	delete fenceObject;
-	fenceObject = nullptr;
+	/*delete fenceObject;
+	fenceObject = nullptr;*/
 
 	/*delete bunnyObject;
-	bunnyObject = nullptr;
+	bunnyObject = nullptr;*/
 
 	delete planeObject;
-	planeObject = nullptr;*/
+	planeObject = nullptr;
 
 	// 3Dモデルマネージャー終了
 	ModelManager::GetInstance()->Finalize();

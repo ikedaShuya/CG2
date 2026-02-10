@@ -5,6 +5,8 @@
 #include <d3d12.h>
 #include "MathFunctions.h"
 
+static const uint32_t kNumInstance = 10;
+
 class Object3dCommon;
 class DirectXCommon;
 class Model;
@@ -74,6 +76,7 @@ public: // メンバ関数
 	// ===== リソース生成 =====
 	void CreateTransformationMatrixResource();
 	void CreateDirectionalLight();
+	void CreateInstancingBuffer();
 
 	// setter
 	void SetModel(Model *model) { this->model = model; }
@@ -126,4 +129,7 @@ private:
 	math::Transform cameraTransform;
 
 	Model *model = nullptr;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = nullptr;
+	TransformationMatrix *instancingData = nullptr;
 };
