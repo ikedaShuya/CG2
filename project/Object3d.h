@@ -14,37 +14,6 @@ class Object3d
 {
 public:
 
-	// 頂点データa
-	struct VertexData
-	{
-		math::Vector4 position;
-		math::Vector2 texcoord;
-		math::Vector3 normal;
-	};
-
-	// マテリアル読み込み用
-	struct MaterialData
-	{
-		std::string textureFilePath;
-		uint32_t textureIndex = 0;
-	};
-
-	// モデルデータ
-	struct ModelData
-	{
-		std::vector<VertexData> vertices;
-		MaterialData material;
-	};
-
-	// GPU用マテリアル
-	struct Material
-	{
-		math::Vector4 color;
-		int32_t enableLighting;
-		float padding[3];
-		math::Matrix4x4 uvTransform;
-	};
-
 	// 座標変換行列
 	struct TransformationMatrix
 	{
@@ -58,6 +27,11 @@ public:
 		math::Vector4 color;      // ライトの色
 		math::Vector3 direction;  // ライトの向き
 		float intensity;          // 輝度
+	};
+
+	struct CameraForGPU
+	{
+		math::Vector3 worldPosition;
 	};
 
 public: // メンバ関数
@@ -74,6 +48,7 @@ public: // メンバ関数
 	// ===== リソース生成 =====
 	void CreateTransformationMatrixResource();
 	void CreateDirectionalLight();
+	void CreateCameraResource();
 
 	// setter
 	void SetModel(Model *model) { this->model = model; }
@@ -124,6 +99,9 @@ private:
 	math::Transform transform;
 	// カメラのTransform
 	math::Transform cameraTransform;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource = nullptr;
+	CameraForGPU *cameraData = nullptr;
 
 	Model *model = nullptr;
 };

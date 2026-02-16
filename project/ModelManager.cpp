@@ -1,8 +1,9 @@
 #include "ModelManager.h"
+#include <filesystem>
 #include "ModelCommon.h"
 #include "DirectXCommon.h"
-#include <filesystem>
 #include "Model.h"
+#include "TextureManager.h"
 
 ModelManager *ModelManager::instance = nullptr;
 

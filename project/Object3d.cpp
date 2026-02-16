@@ -14,6 +14,7 @@ void Object3d::Initialize(Object3dCommon *object3dCommon)
 	// ===== GPUリソース生成 =====
 	CreateTransformationMatrixResource();
 	CreateDirectionalLight();
+	CreateCameraResource();
 
 	// ===== Transform初期化 =====
 	transform = {
@@ -50,6 +51,7 @@ void Object3d::Draw()
 {
 	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(4, cameraResource->GetGPUVirtualAddress());
 
 	// 3Dモデルが割り当てられていれば描画する
 	if (model) {
@@ -82,6 +84,13 @@ void Object3d::CreateDirectionalLight()
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intensity = 1.0f;
+}
+
+void Object3d::CreateCameraResource()
+{
+	cameraResource = object3dCommon->GetDxCommon()->CreateBufferResource(sizeof(CameraForGPU));
+	cameraResource->Map(0, nullptr, reinterpret_cast<void **>(&cameraData));
+	cameraData->worldPosition = cameraTransform.translate;
 }
 
 void Object3d::SetModel(const std::string &filePath)

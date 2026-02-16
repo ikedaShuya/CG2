@@ -42,6 +42,7 @@ public:
 		int32_t enableLighting;
 		float padding[3];
 		math::Matrix4x4 uvTransform;
+		float shininess;
 	};
 
 public: // メンバ関数

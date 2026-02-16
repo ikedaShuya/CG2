@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
+#include <numbers>
 
 void Model::Initialize(ModelCommon *modelCommon, const std::string &directorypath, const std::string &filename)
 {
@@ -169,4 +170,5 @@ void Model::CreateMaterialResource()
 	materialData->color = math::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialData->enableLighting = true;
 	materialData->uvTransform = math::MakeIdentity4x4();
+	materialData->shininess = 8.0f;
 }
