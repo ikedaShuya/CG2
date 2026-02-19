@@ -74,7 +74,6 @@ public: // メンバ関数
 	void Draw();
 
 	// ===== リソース生成 =====
-	void CreateTransformationMatrixResource();
 	void CreateDirectionalLight();
 	void CreateInstancingBuffer();
 
@@ -108,13 +107,6 @@ private:
 	Object3dCommon *object3dCommon = nullptr;
 
 
-	// ===== 変換行列 =====
-	// 変換行列用バッファリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = nullptr;
-	// 変換行列データ書き込み用ポインタ
-	TransformationMatrix *transformationMatrixData = nullptr;
-
-
 	// ===== 平行光源 =====
 	// 平行光源用バッファリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = nullptr;
@@ -132,4 +124,8 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = nullptr;
 	TransformationMatrix *instancingData = nullptr;
+
+	math::Transform transforms[kNumInstance];
+
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
 };

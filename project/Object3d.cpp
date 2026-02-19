@@ -11,9 +11,11 @@ void Object3d::Initialize(Object3dCommon *object3dCommon)
 {
 	this->object3dCommon = object3dCommon;
 
+	instancingSrvHandleGPU = object3dCommon->GetDxCommon()->GetSRVGPUDescriptorHandle(3);
+
 	// ===== GPUリソース生成 =====
-	CreateTransformationMatrixResource();
 	CreateDirectionalLight();
+	CreateInstancingBuffer();
 
 	// ===== Transform初期化 =====
 	transform = {
@@ -41,33 +43,23 @@ void Object3d::Update()
 	// ===== 射影行列 =====
 	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
 
-	// ===== 定数バッファへ反映 =====
-	transformationMatrixData->WVP = worldMatrix * viewMatrix * projectionMatrix;
-	transformationMatrixData->World = worldMatrix;
+	for (uint32_t index = 0; index < kNumInstance; ++index) {
+		Matrix4x4 worldMatrix = MakeAffineMatrix(transforms[index].scale, transforms[index].rotate, transforms[index].translate);
+		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+		instancingData[index].WVP = worldViewProjectionMatrix;
+		instancingData[index].World = worldMatrix;
+	}
 }
 
 void Object3d::Draw()
 {
-	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, directionalLightResource->GetGPUVirtualAddress());
+	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(3, instancingSrvHandleGPU);
 
 	// 3Dモデルが割り当てられていれば描画する
 	if (model) {
 		model->Draw();
 	}
-}
-
-void Object3d::CreateTransformationMatrixResource()
-{
-	// 座標変換行列用リソース作成
-	transformationMatrixResource = object3dCommon->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-
-	// 書き込み用アドレス取得
-	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void **>(&transformationMatrixData));
-
-	// 単位行列で初期化
-	transformationMatrixData->WVP = math::MakeIdentity4x4();
-	transformationMatrixData->World = math::MakeIdentity4x4();
 }
 
 void Object3d::CreateDirectionalLight()
@@ -89,11 +81,19 @@ void Object3d::CreateInstancingBuffer()
 	instancingResource = object3dCommon->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix) * kNumInstance);
 
 	instancingResource->Map(0, nullptr, reinterpret_cast<void **>(&instancingData));
-
+		
 	for (uint32_t index = 0; index < kNumInstance; ++index) {
 		instancingData[index].WVP = MakeIdentity4x4();
 		instancingData[index].World = MakeIdentity4x4();
 	}
+
+	for (uint32_t index = 0; index < kNumInstance; ++index) {
+		transforms[index].scale = { 1.0f,1.0f,1.0f };
+		transforms[index].rotate = { 0.0f,0.0f,0.0f };
+		transforms[index].translate = { index * 0.1f,index * 0.1f,index * 0.1f };
+	}
+
+	object3dCommon->CreateInstancingSRV(instancingResource.Get(), kNumInstance, 3);
 }
 
 void Object3d::SetModel(const std::string &filePath)

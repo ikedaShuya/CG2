@@ -44,6 +44,13 @@ public:
 		math::Matrix4x4 uvTransform;
 	};
 
+	// 座標変換行列
+	struct TransformationMatrix
+	{
+		math::Matrix4x4 WVP;
+		math::Matrix4x4 World;
+	};
+
 public: // メンバ関数
 	// 初期化
 	void Initialize(ModelCommon *modelCommon, const std::string &directorypath, const std::string &filename);
@@ -60,6 +67,7 @@ private:
 
 	void CreateVertexBuffer(const std::vector<VertexData> &vertices);
 	void CreateMaterialResource();
+	void CreateInstancingResource();
 
 private:
 
@@ -83,4 +91,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = nullptr;
 	// マテリアルデータ書き込み用ポインタ
 	Material *materialData = nullptr;
+
+	const uint32_t kNumInstance = 10; // インスタンスの数
 };
