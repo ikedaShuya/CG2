@@ -26,6 +26,13 @@ public: // メンバ関数
 		math::Matrix4x4 World;
 	};
 
+	struct ParticleForGPU
+	{
+		math::Matrix4x4 WVP;
+		math::Matrix4x4 World;
+		math::Vector4 color;
+	};
+
 private:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState = nullptr;

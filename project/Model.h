@@ -56,7 +56,7 @@ public: // メンバ関数
 	void Initialize(ModelCommon *modelCommon, const std::string &directorypath, const std::string &filename);
 
 	// 描画
-	void Draw();
+	void Draw(uint32_t instanceCount);
 
 	// ===== モデル読み込み =====
 	static MaterialData LoadMaterialTemplateFile(const std::string &directoryPath, const std::string &filename);
@@ -67,7 +67,6 @@ private:
 
 	void CreateVertexBuffer(const std::vector<VertexData> &vertices);
 	void CreateMaterialResource();
-	void CreateInstancingResource();
 
 private:
 
@@ -92,5 +91,5 @@ private:
 	// マテリアルデータ書き込み用ポインタ
 	Material *materialData = nullptr;
 
-	const uint32_t kNumInstance = 10; // インスタンスの数
+	const uint32_t kNumInstance = 5; // インスタンスの数
 };

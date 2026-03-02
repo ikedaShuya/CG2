@@ -3,9 +3,10 @@
 #include <vector>
 #include <wrl.h>
 #include <d3d12.h>
+#include <random>
 #include "MathFunctions.h"
 
-static const uint32_t kNumInstance = 10;
+static const uint32_t kNumMaxInstance = 10;
 
 class Object3dCommon;
 class DirectXCommon;
@@ -16,7 +17,7 @@ class Object3d
 {
 public:
 
-	// 頂点データa
+	// 頂点データ
 	struct VertexData
 	{
 		math::Vector4 position;
@@ -62,6 +63,22 @@ public:
 		float intensity;          // 輝度
 	};
 
+	struct Particle
+	{
+		math::Transform transform;
+		math::Vector3 velocity;
+		math::Vector4 color;
+		float lifeTime;
+		float currentTime;
+	};
+
+	struct ParticleForGPU
+	{
+		math::Matrix4x4 WVP;
+		math::Matrix4x4 World;
+		math::Vector4 color;
+	};
+
 public: // メンバ関数
 
 	// 初期化
@@ -101,6 +118,8 @@ public: // メンバ関数
 
 	void SetModel(const std::string &filePath);
 
+	Particle MakeNewParticle(std::mt19937 &randomEngine);
+
 private:
 
 	// ===== 共通オブジェクト =====
@@ -123,9 +142,11 @@ private:
 	Model *model = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = nullptr;
-	TransformationMatrix *instancingData = nullptr;
+	ParticleForGPU *instancingData = nullptr;
 
-	math::Transform transforms[kNumInstance];
+	Particle particles[kNumMaxInstance];
 
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+
+	uint32_t numInstance = 0;
 };

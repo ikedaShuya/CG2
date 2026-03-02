@@ -24,7 +24,7 @@ void Model::Initialize(ModelCommon *modelCommon, const std::string &directorypat
 			modelData_.material.textureFilePath);
 }
 
-void Model::Draw() {
+void Model::Draw(uint32_t instanceCount) {
 
 	// ===== 頂点バッファ設定 =====
 	modelCommon_->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
@@ -36,7 +36,7 @@ void Model::Draw() {
 	modelCommon_->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData_.material.textureIndex));
 
 	// ===== 描画 =====
-	modelCommon_->GetDxCommon()->GetCommandList()->DrawInstanced(UINT(modelData_.vertices.size()), kNumInstance, 0, 0);
+	modelCommon_->GetDxCommon()->GetCommandList()->DrawInstanced(UINT(modelData_.vertices.size()), instanceCount, 0, 0);
 }
 
 Model::MaterialData Model::LoadMaterialTemplateFile(const std::string &directoryPath, const std::string &filename)

@@ -30,7 +30,7 @@ void Object3dCommon::CreateInstancingSRV(ID3D12Resource *instancingResource, uin
 	instancingSrvDesc.Buffer.FirstElement = 0;
 	instancingSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 	instancingSrvDesc.Buffer.NumElements = numInstance;
-	instancingSrvDesc.Buffer.StructureByteStride = sizeof(TransformationMatrix);
+	instancingSrvDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
 	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU = dxCommon_->GetSRVCPUDescriptorHandle(descriptorIndex);
 	dxCommon_->GetDevice()->CreateShaderResourceView(instancingResource, &instancingSrvDesc, instancingSrvHandleCPU);
 }
@@ -221,8 +221,8 @@ void Object3dCommon::CreateGraphicsPipelineState() {
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc {};
 	// Depthの機能を有効化する
 	depthStencilDesc.DepthEnable = true;
-	// 書き込みします
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	// Depthの書き込みを行わない
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	// 比較関数はLessEqual。つまり、近ければ描画される
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 

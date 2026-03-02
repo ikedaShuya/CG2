@@ -413,4 +413,55 @@ namespace math {
 		lhs.y += rhs.y;
 		return lhs;
 	}
+
+	Vector3 operator+(const Vector3 &lhs, const Vector3 &rhs)
+	{
+		Vector3 result;
+		result.x = lhs.x + rhs.x;
+		result.y = lhs.y + rhs.y;
+		result.z = lhs.z + rhs.z;
+		return result;
+	}
+	
+	Vector3 operator-(const Vector3 &lhs, const Vector3 &rhs)
+	{
+		Vector3 result;
+		result.x = lhs.x - rhs.x;
+		result.y = lhs.y - rhs.y;
+		result.z = lhs.z - rhs.z;
+		return result;
+	}
+
+	Vector3 operator*(const Vector3 &v, float scalar)
+	{
+		Vector3 result;
+		result.x = v.x * scalar;
+		result.y = v.y * scalar;
+		result.z = v.z * scalar;
+		return result;
+	}
+
+	Vector3 &operator+=(Vector3 &lhs, const Vector3 &rhs)
+	{
+		lhs.x += rhs.x;
+		lhs.y += rhs.y;
+		lhs.z += rhs.z;
+		return lhs;
+	}
+
+	Vector3 &operator-=(Vector3 &lhs, const Vector3 &rhs)
+	{
+		lhs.x -= rhs.x;
+		lhs.y -= rhs.y;
+		lhs.z -= rhs.z;
+		return lhs;
+	}
+
+	Vector3 &operator*=(Vector3 &v, float scalar)
+	{
+		v.x *= scalar;
+		v.y *= scalar;
+		v.z *= scalar;
+		return v;
+	}
 }
