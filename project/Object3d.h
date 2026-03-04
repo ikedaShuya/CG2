@@ -120,6 +120,20 @@ public: // メンバ関数
 
 	Particle MakeNewParticle(std::mt19937 &randomEngine);
 
+	Particle *GetParticles() { return particles; }
+	uint32_t GetParticleCount() const { return numInstance; }
+
+	void SetBillboard(bool flag) { isBillboard = flag; }
+	bool GetBillboard() const { return isBillboard; }
+
+	void SetCameraScale(const math::Vector3 &scale) { cameraTransform.scale = scale; }
+	void SetCameraRotate(const math::Vector3 &rotate) { cameraTransform.rotate = rotate; }
+	void SetCameraTranslate(const math::Vector3 &translate) { cameraTransform.translate = translate; }
+
+	const math::Vector3 &GetCameraScale() const { return cameraTransform.scale; }
+	const math::Vector3 &GetCameraRotate() const { return cameraTransform.rotate; }
+	const math::Vector3 &GetCameraTranslate() const { return cameraTransform.translate; }
+
 private:
 
 	// ===== 共通オブジェクト =====
@@ -149,4 +163,6 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
 
 	uint32_t numInstance = 0;
+
+	bool isBillboard = true;
 };

@@ -4,6 +4,7 @@
 #include "TextureManager.h"
 #include "Model.h"
 #include "ModelManager.h"
+#include <numbers>
 
 using namespace math;
 
@@ -29,17 +30,14 @@ void Object3d::Initialize(Object3dCommon *object3dCommon)
 
 	cameraTransform = {
 		{1.0f, 1.0f, 1.0f},   // scale
-		{0.3f, 0.0f, 0.0f},   // rotate
-		{0.0f, 4.0f, -10.0f}  // translate
+		{std::numbers::pi_v<float> / 3.0f, std::numbers::pi_v<float>, 0.0f},   // rotate
+		{0.0f, 23.0f, 10.0f}  // translate
 	};
 }
 
 void Object3d::Update()
 {
 	const float kDeltaTime = 1.0f / 60.0f;
-
-	// ===== ワールド行列 =====
-	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
 	// ===== ビュー行列（カメラ） =====
 	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
@@ -48,10 +46,21 @@ void Object3d::Update()
 	// ===== 射影行列 =====
 	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
 
+	Matrix4x4 billboardMatrix = MakeIdentity4x4();
+
+	if (isBillboard)
+	{
+		Matrix4x4 backToFrontMatrix = MakeRotateYMatrix(std::numbers::pi_v<float>);
+		billboardMatrix = Multiply(backToFrontMatrix, cameraMatrix);
+		billboardMatrix.m[3][0] = 0.0f;
+		billboardMatrix.m[3][1] = 0.0f;
+		billboardMatrix.m[3][2] = 0.0f;
+	}
+
 	numInstance = 0; // 描画すべきインスタンス数
 	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
 
-		if (particles[index].lifeTime <= particles[index].currentTime){ // 生存期間を過ぎていたら更新せず描画対象にしない
+		if (particles[index].lifeTime <= particles[index].currentTime) { // 生存期間を過ぎていたら更新せず描画対象にしない
 			particles[index] = MakeNewParticle(randomEngine);
 		}
 
@@ -61,7 +70,10 @@ void Object3d::Update()
 		float alpha = 1.0f - (particles[index].currentTime / particles[index].lifeTime);
 		particles[index].color.w = alpha;
 
-		Matrix4x4 worldMatrix = MakeAffineMatrix(particles[index].transform.scale, particles[index].transform.rotate, particles[index].transform.translate);
+		Matrix4x4 scaleMatrix = MakeScaleMatrix(particles[index].transform.scale);
+		Matrix4x4 translateMatrix = MakeTranslateMatrix(particles[index].transform.translate);
+
+		Matrix4x4 worldMatrix = Multiply(Multiply(scaleMatrix, billboardMatrix), translateMatrix);
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 
 		instancingData[numInstance].WVP = worldViewProjectionMatrix;
@@ -101,7 +113,7 @@ void Object3d::CreateInstancingBuffer()
 	instancingResource = object3dCommon->GetDxCommon()->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance);
 
 	instancingResource->Map(0, nullptr, reinterpret_cast<void **>(&instancingData));
-		
+
 	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
 		particles[index] = MakeNewParticle(randomEngine);
 	}

@@ -663,6 +663,76 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 
+		if (ImGui::CollapsingHeader("Particle"))
+		{
+			Object3d::Particle *particles = planeObject->GetParticles();
+			uint32_t numInstance = planeObject->GetParticleCount();
+
+			for (uint32_t i = 0; i < numInstance; i++)
+			{
+				auto &p = particles[i];
+
+				if (ImGui::TreeNode(("Particle " + std::to_string(i)).c_str()))
+				{
+					float pos[3] = { p.transform.translate.x, p.transform.translate.y, p.transform.translate.z };
+					if (ImGui::DragFloat3("Position", pos, 0.1f))
+					{
+						p.transform.translate = { pos[0], pos[1], pos[2] };
+					}
+
+					float vel[3] = { p.velocity.x, p.velocity.y, p.velocity.z };
+					if (ImGui::DragFloat3("Velocity", vel, 0.01f))
+					{
+						p.velocity = { vel[0], vel[1], vel[2] };
+					}
+
+					float scale[3] = { p.transform.scale.x, p.transform.scale.y, p.transform.scale.z };
+					if (ImGui::DragFloat3("Scale", scale, 0.01f))
+					{
+						p.transform.scale = { scale[0], scale[1], scale[2] };
+					}
+
+					float color[4] = { p.color.x, p.color.y, p.color.z, p.color.w };
+					if (ImGui::ColorEdit4("Color", color))
+					{
+						p.color = { color[0], color[1], color[2], color[3] };
+					}
+
+					float life = p.lifeTime;
+					if (ImGui::DragFloat("LifeTime", &life, 0.1f))
+					{
+						p.lifeTime = life;
+					}
+
+					ImGui::TreePop();
+				}
+			}
+		}
+
+		bool billboard = planeObject->GetBillboard();
+		if (ImGui::Checkbox("Billboard", &billboard))
+		{
+			planeObject->SetBillboard(billboard);
+		}
+
+		// WinMain.cpp の ImGui 描画処理内に追加
+		if (ImGui::CollapsingHeader("Camera"))
+		{
+			// カメラの座標
+			math::Vector3 camPos = planeObject->GetCameraTranslate();
+			if (ImGui::DragFloat3("Camera Translate", &camPos.x, 0.1f))
+			{
+				planeObject->SetCameraTranslate(camPos);
+			}
+
+			// カメラの回転
+			math::Vector3 camRot = planeObject->GetCameraRotate();
+			if (ImGui::DragFloat3("Camera Rotate", &camRot.x, 0.01f))
+			{
+				planeObject->SetCameraRotate(camRot);
+			}
+		}
+
 		ImGui::End();
 
 		// ImGui描画コマンド生成
@@ -688,7 +758,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		spriteCommon->SetupCommonDrawing();
 
 		// スプライト描画
-		uvCheckerSprite->Draw();
+		//uvCheckerSprite->Draw();
 
 	#ifdef USE_IMGUI
 		// ImGui描画コマンドを積む
