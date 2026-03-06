@@ -446,153 +446,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::Begin("Control Panel");
 
-		if (ImGui::CollapsingHeader("Plane Object"))
-		{
-			// 位置
-			math::Vector3 translate = planeObject->GetTranslate();
-			if (ImGui::DragFloat3("Translate##Plane", &translate.x, 0.1f))
-			{
-				planeObject->SetTranslate(translate);
-			}
-
-			// 回転
-			math::Vector3 rotate = planeObject->GetRotate();
-			if (ImGui::DragFloat3("Rotate##Plane", &rotate.x, 1.0f))
-			{
-				planeObject->SetRotate(rotate);
-			}
-
-			// スケール
-			math::Vector3 scale = planeObject->GetScale();
-			if (ImGui::DragFloat3("Scale##Plane", &scale.x, 0.01f, 0.01f, 10.0f))
-			{
-				planeObject->SetScale(scale);
-			}
-
-			// ライト情報表示・編集
-			if (ImGui::TreeNode("Directional Light"))
-			{
-				math::Vector3 dir = planeObject->GetLightDirection();
-				if (ImGui::DragFloat3("Direction##PlaneLight", &dir.x, 0.01f, -1.0f, 1.0f))
-				{
-					planeObject->SetLightDirection(dir);
-				}
-
-				float intensity = planeObject->GetLightIntensity();
-				if (ImGui::DragFloat("Intensity##PlaneLight", &intensity, 0.01f, 0.0f, 10.0f))
-				{
-					planeObject->SetLightIntensity(intensity);
-				}
-
-				math::Vector4 color = planeObject->GetLightColor();
-				float color_f[4] = { color.x, color.y, color.z, color.w };
-				if (ImGui::ColorEdit4("Color##PlaneLight", color_f))
-				{
-					planeObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-				}
-
-				ImGui::TreePop();
-			}
-		}
-
-		//if (ImGui::CollapsingHeader("Bunny Object"))
-		//{
-		//	// 位置
-		//	math::Vector3 translate = bunnyObject->GetTranslate();
-		//	if (ImGui::DragFloat3("Translate##Bunny", &translate.x, 0.1f))
-		//	{
-		//		bunnyObject->SetTranslate(translate);
-		//	}
-
-		//	// 回転
-		//	math::Vector3 rotate = bunnyObject->GetRotate();
-		//	if (ImGui::DragFloat3("Rotate##Bunny", &rotate.x, 1.0f))
-		//	{
-		//		bunnyObject->SetRotate(rotate);
-		//	}
-
-		//	// スケール
-		//	math::Vector3 scale = bunnyObject->GetScale();
-		//	if (ImGui::DragFloat3("Scale##Bunny", &scale.x, 0.01f, 0.01f, 10.0f))
-		//	{
-		//		bunnyObject->SetScale(scale);
-		//	}
-
-		//	// ライト情報表示・編集
-		//	if (ImGui::TreeNode("Directional Light"))
-		//	{
-		//		math::Vector3 dir = bunnyObject->GetLightDirection();
-		//		if (ImGui::DragFloat3("Direction##BunnyLight", &dir.x, 0.01f, -1.0f, 1.0f))
-		//		{
-		//			bunnyObject->SetLightDirection(dir);
-		//		}
-
-		//		float intensity = bunnyObject->GetLightIntensity();
-		//		if (ImGui::DragFloat("Intensity##BunnyLight", &intensity, 0.01f, 0.0f, 10.0f))
-		//		{
-		//			bunnyObject->SetLightIntensity(intensity);
-		//		}
-
-		//		math::Vector4 color = bunnyObject->GetLightColor();
-		//		float color_f[4] = { color.x, color.y, color.z, color.w };
-		//		if (ImGui::ColorEdit4("Color##BunnyLight", color_f))
-		//		{
-		//			bunnyObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-		//		}
-
-		//		ImGui::TreePop();
-		//	}
-		//}
-
-		//if (ImGui::CollapsingHeader("fence Object"))
-		//{
-		//	// 位置
-		//	math::Vector3 translate = fenceObject->GetTranslate();
-		//	if (ImGui::DragFloat3("Translate##fence", &translate.x, 0.1f))
-		//	{
-		//		fenceObject->SetTranslate(translate);
-		//	}
-
-		//	// 回転
-		//	math::Vector3 rotate = fenceObject->GetRotate();
-		//	if (ImGui::DragFloat3("Rotate##fence", &rotate.x, 1.0f))
-		//	{
-		//		fenceObject->SetRotate(rotate);
-		//	}
-
-		//	// スケール
-		//	math::Vector3 scale = fenceObject->GetScale();
-		//	if (ImGui::DragFloat3("Scale##fence", &scale.x, 0.01f, 0.01f, 10.0f))
-		//	{
-		//		fenceObject->SetScale(scale);
-		//	}
-
-		//	// ライト情報表示・編集
-		//	if (ImGui::TreeNode("Directional Light"))
-		//	{
-		//		math::Vector3 dir = fenceObject->GetLightDirection();
-		//		if (ImGui::DragFloat3("Direction##fenceLight", &dir.x, 0.01f, -1.0f, 1.0f))
-		//		{
-		//			fenceObject->SetLightDirection(dir);
-		//		}
-
-		//		float intensity = fenceObject->GetLightIntensity();
-		//		if (ImGui::DragFloat("Intensity##fenceLight", &intensity, 0.01f, 0.0f, 10.0f))
-		//		{
-		//			fenceObject->SetLightIntensity(intensity);
-		//		}
-
-		//		math::Vector4 color = fenceObject->GetLightColor();
-		//		float color_f[4] = { color.x, color.y, color.z, color.w };
-		//		if (ImGui::ColorEdit4("Color##fenceLight", color_f))
-		//		{
-		//			fenceObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-		//		}
-
-		//		ImGui::TreePop();
-		//	}
-		//}
-
 		if (ImGui::CollapsingHeader("UV Checker Sprite"))
 		{
 			// スプライトの位置（2D）
@@ -663,52 +516,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 
-		if (ImGui::CollapsingHeader("Particle"))
-		{
-			Object3d::Particle *particles = planeObject->GetParticles();
-			uint32_t numInstance = planeObject->GetParticleCount();
-
-			for (uint32_t i = 0; i < numInstance; i++)
-			{
-				auto &p = particles[i];
-
-				if (ImGui::TreeNode(("Particle " + std::to_string(i)).c_str()))
-				{
-					float pos[3] = { p.transform.translate.x, p.transform.translate.y, p.transform.translate.z };
-					if (ImGui::DragFloat3("Position", pos, 0.1f))
-					{
-						p.transform.translate = { pos[0], pos[1], pos[2] };
-					}
-
-					float vel[3] = { p.velocity.x, p.velocity.y, p.velocity.z };
-					if (ImGui::DragFloat3("Velocity", vel, 0.01f))
-					{
-						p.velocity = { vel[0], vel[1], vel[2] };
-					}
-
-					float scale[3] = { p.transform.scale.x, p.transform.scale.y, p.transform.scale.z };
-					if (ImGui::DragFloat3("Scale", scale, 0.01f))
-					{
-						p.transform.scale = { scale[0], scale[1], scale[2] };
-					}
-
-					float color[4] = { p.color.x, p.color.y, p.color.z, p.color.w };
-					if (ImGui::ColorEdit4("Color", color))
-					{
-						p.color = { color[0], color[1], color[2], color[3] };
-					}
-
-					float life = p.lifeTime;
-					if (ImGui::DragFloat("LifeTime", &life, 0.1f))
-					{
-						p.lifeTime = life;
-					}
-
-					ImGui::TreePop();
-				}
-			}
-		}
-
 		bool billboard = planeObject->GetBillboard();
 		if (ImGui::Checkbox("Billboard", &billboard))
 		{
@@ -731,6 +538,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			{
 				planeObject->SetCameraRotate(camRot);
 			}
+		}
+
+		if (ImGui::CollapsingHeader("Emitter"))
+		{
+			auto &emitter = planeObject->GetEmitter();
+
+			ImGui::DragFloat3(
+				"EmitterTranslate",
+				&emitter.transform.translate.x,
+				0.01f,
+				-100.0f,
+				100.0f
+			);
 		}
 
 		ImGui::End();
@@ -758,7 +578,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		spriteCommon->SetupCommonDrawing();
 
 		// スプライト描画
-		//uvCheckerSprite->Draw();
+		uvCheckerSprite->Draw();
 
 	#ifdef USE_IMGUI
 		// ImGui描画コマンドを積む

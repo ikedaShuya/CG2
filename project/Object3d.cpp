@@ -33,53 +33,96 @@ void Object3d::Initialize(Object3dCommon *object3dCommon)
 		{std::numbers::pi_v<float> / 3.0f, std::numbers::pi_v<float>, 0.0f},   // rotate
 		{0.0f, 23.0f, 10.0f}  // translate
 	};
+
+	emitter.transform.translate = { 0.0f,0.0f,0.0f };
+	emitter.transform.rotate = { 0.0f,0.0f,0.0f };
+	emitter.transform.scale = { 1.0f,1.0f,1.0f };
+	emitter.count = 40;
+	emitter.frequency = 0.5f; // 0.5秒ごとに発生
+	emitter.frequencyTime = 0.0f; // 発生頻度用の時刻、0で初期化
 }
 
 void Object3d::Update()
 {
 	const float kDeltaTime = 1.0f / 60.0f;
 
-	// ===== ビュー行列（カメラ） =====
+	numInstance = 0;
+
+	// ===== パーティクル発生 =====
+	emitter.frequencyTime += kDeltaTime;
+	if (emitter.frequencyTime >= emitter.frequency) {
+		particles.splice(particles.end(), Emit(emitter, randomEngine));
+		emitter.frequencyTime -= emitter.frequency;
+	}
+
+	// ===== カメラ行列 =====
 	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+
 	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
 
 	// ===== 射影行列 =====
 	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
 
+	// ===== ビルボード行列 =====
 	Matrix4x4 billboardMatrix = MakeIdentity4x4();
 
-	if (isBillboard)
-	{
-		Matrix4x4 backToFrontMatrix = MakeRotateYMatrix(std::numbers::pi_v<float>);
-		billboardMatrix = Multiply(backToFrontMatrix, cameraMatrix);
+	if (isBillboard) {
+		billboardMatrix = Inverse(viewMatrix);
+
+		// 平行移動を消す
 		billboardMatrix.m[3][0] = 0.0f;
 		billboardMatrix.m[3][1] = 0.0f;
 		billboardMatrix.m[3][2] = 0.0f;
 	}
 
-	numInstance = 0; // 描画すべきインスタンス数
-	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
-
-		if (particles[index].lifeTime <= particles[index].currentTime) { // 生存期間を過ぎていたら更新せず描画対象にしない
-			particles[index] = MakeNewParticle(randomEngine);
+	// ===== パーティクル更新 =====
+	for (std::list<Particle>::iterator particleIterator = particles.begin(); particleIterator != particles.end();) {
+		// 寿命チェック
+		if ((*particleIterator).lifeTime <= (*particleIterator).currentTime) {
+			particleIterator = particles.erase(particleIterator); // 生存期間過ぎたParticleはlistから消す。戻り値が次のイテレータとなる
+			continue;
 		}
 
-		particles[index].transform.translate += particles[index].velocity * kDeltaTime;
-		particles[index].currentTime += kDeltaTime;
+		Matrix4x4 worldMatrix;
 
-		float alpha = 1.0f - (particles[index].currentTime / particles[index].lifeTime);
-		particles[index].color.w = alpha;
+		// ===== ビルボード =====
+		if (isBillboard) {
+			Matrix4x4 scaleMatrix = MakeScaleMatrix(particleIterator->transform.scale);
 
-		Matrix4x4 scaleMatrix = MakeScaleMatrix(particles[index].transform.scale);
-		Matrix4x4 translateMatrix = MakeTranslateMatrix(particles[index].transform.translate);
+			Matrix4x4 translateMatrix = MakeTranslateMatrix(particleIterator->transform.translate);
 
-		Matrix4x4 worldMatrix = Multiply(Multiply(scaleMatrix, billboardMatrix), translateMatrix);
-		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+			worldMatrix = Multiply(scaleMatrix, billboardMatrix);
+			worldMatrix = Multiply(worldMatrix, translateMatrix);
 
-		instancingData[numInstance].WVP = worldViewProjectionMatrix;
+		} else {
+			worldMatrix = MakeAffineMatrix(particleIterator->transform.scale, particleIterator->transform.rotate, particleIterator->transform.translate);
+		}
+
+		// ===== WVP計算 =====
+		Matrix4x4 worldViewMatrix = Multiply(worldMatrix, viewMatrix);
+		Matrix4x4 worldViewProjectionMatrix = Multiply(Multiply(worldMatrix, viewMatrix), projectionMatrix);
+
+		// ===== インスタンシングデータ書き込み =====
+		if (numInstance >= kNumMaxInstance) {
+			break;
+		}
+
 		instancingData[numInstance].World = worldMatrix;
-		instancingData[numInstance].color = particles[index].color;
-		++numInstance; // 生きているParticleの数を1つカウントする
+		instancingData[numInstance].WVP = worldViewProjectionMatrix;
+		instancingData[numInstance].color = particleIterator->color;
+
+		++numInstance;
+
+		// ===== 位置更新 =====
+		particleIterator->transform.translate.x += particleIterator->velocity.x * kDeltaTime;
+
+		particleIterator->transform.translate.y += particleIterator->velocity.y * kDeltaTime;
+
+		particleIterator->transform.translate.z += particleIterator->velocity.z * kDeltaTime;
+
+		particleIterator->currentTime += kDeltaTime;
+
+		++particleIterator;
 	}
 }
 
@@ -89,7 +132,7 @@ void Object3d::Draw()
 	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(3, instancingSrvHandleGPU);
 
 	// 3Dモデルが割り当てられていれば描画する
-	if (model) {
+	if (model && numInstance > 0) {
 		model->Draw(numInstance);
 	}
 }
@@ -114,16 +157,6 @@ void Object3d::CreateInstancingBuffer()
 
 	instancingResource->Map(0, nullptr, reinterpret_cast<void **>(&instancingData));
 
-	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
-		particles[index] = MakeNewParticle(randomEngine);
-	}
-
-	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
-		instancingData[index].WVP = MakeIdentity4x4();
-		instancingData[index].World = MakeIdentity4x4();
-		instancingData[index].color = particles[index].color;
-	}
-
 	object3dCommon->CreateInstancingSRV(instancingResource.Get(), kNumMaxInstance, 3);
 }
 
@@ -133,18 +166,29 @@ void Object3d::SetModel(const std::string &filePath)
 	model = ModelManager::GetInstance()->FindModel(filePath);
 }
 
-Object3d::Particle Object3d::MakeNewParticle(std::mt19937 &randomEngine)
+Object3d::Particle Object3d::MakeNewParticle(std::mt19937 &randomEngine, const math::Vector3 &translate)
 {
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
-	std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
+	std::uniform_real_distribution<float> distTime(1.0f, 1.5f);
 	Particle particle {};
 	particle.transform.scale = { 1.0f,1.0f,1.0f };
 	particle.transform.rotate = { 0.0f,0.0f,0.0f };
-	particle.transform.translate = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
+	particle.transform.translate = { emitter.transform.translate.x + distribution(randomEngine),emitter.transform.translate.y + distribution(randomEngine),emitter.transform.translate.z + distribution(randomEngine) };
 	particle.velocity = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
 	particle.color = { distColor(randomEngine),distColor(randomEngine) ,distColor(randomEngine) ,1.0f };
 	particle.lifeTime = distTime(randomEngine);
 	particle.currentTime = 0;
+	Vector3 randomTranslate { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
+	particle.transform.translate = translate + randomTranslate;
 	return particle;
+}
+
+std::list<Object3d::Particle> Object3d::Emit(const Emitter &emitter, std::mt19937 &randomEngine)
+{
+	std::list<Particle> particles;
+	for (uint32_t count = 0; count < emitter.count; ++count) {
+		particles.push_back(MakeNewParticle(randomEngine, emitter.transform.translate));
+	}
+	return particles;
 }

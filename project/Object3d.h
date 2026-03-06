@@ -4,9 +4,8 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <random>
+#include <list>
 #include "MathFunctions.h"
-
-static const uint32_t kNumMaxInstance = 10;
 
 class Object3dCommon;
 class DirectXCommon;
@@ -79,6 +78,14 @@ public:
 		math::Vector4 color;
 	};
 
+	struct Emitter
+	{
+		math::Transform transform; //!< エミッタのTransform
+		uint32_t count; //!< 発生数
+		float frequency; //!< 発生頻度
+		float frequencyTime; //!< 頻度用時刻
+	};
+
 public: // メンバ関数
 
 	// 初期化
@@ -118,9 +125,9 @@ public: // メンバ関数
 
 	void SetModel(const std::string &filePath);
 
-	Particle MakeNewParticle(std::mt19937 &randomEngine);
+	Particle MakeNewParticle(std::mt19937 &randomEngine, const math::Vector3 &translate);
 
-	Particle *GetParticles() { return particles; }
+	//Particle *GetParticles() { return particles; }
 	uint32_t GetParticleCount() const { return numInstance; }
 
 	void SetBillboard(bool flag) { isBillboard = flag; }
@@ -133,6 +140,10 @@ public: // メンバ関数
 	const math::Vector3 &GetCameraScale() const { return cameraTransform.scale; }
 	const math::Vector3 &GetCameraRotate() const { return cameraTransform.rotate; }
 	const math::Vector3 &GetCameraTranslate() const { return cameraTransform.translate; }
+
+	std::list<Particle> Emit(const Emitter &emitter, std::mt19937 &randomEngine);
+
+	Emitter &GetEmitter() { return emitter; }
 
 private:
 
@@ -158,11 +169,15 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = nullptr;
 	ParticleForGPU *instancingData = nullptr;
 
-	Particle particles[kNumMaxInstance];
+	std::list<Particle> particles;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
 
 	uint32_t numInstance = 0;
 
 	bool isBillboard = true;
+
+	Emitter emitter {};
+
+	const uint32_t kNumMaxInstance = 100;
 };
