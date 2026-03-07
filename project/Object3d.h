@@ -86,6 +86,12 @@ public:
 		float frequencyTime; //!< 頻度用時刻
 	};
 
+	struct AccelerationField
+	{
+		math::Vector3 acceleration; //!< 加速度
+		math::AABB area; //!<　範囲
+	};
+
 public: // メンバ関数
 
 	// 初期化
@@ -145,6 +151,8 @@ public: // メンバ関数
 
 	Emitter &GetEmitter() { return emitter; }
 
+	bool IsCollision(const math::AABB &aabb, const math::Vector3 &point);
+
 private:
 
 	// ===== 共通オブジェクト =====
@@ -180,4 +188,6 @@ private:
 	Emitter emitter {};
 
 	const uint32_t kNumMaxInstance = 100;
+
+	AccelerationField accelerationField;
 };

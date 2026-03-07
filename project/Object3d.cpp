@@ -40,6 +40,10 @@ void Object3d::Initialize(Object3dCommon *object3dCommon)
 	emitter.count = 40;
 	emitter.frequency = 0.5f; // 0.5秒ごとに発生
 	emitter.frequencyTime = 0.0f; // 発生頻度用の時刻、0で初期化
+
+	accelerationField.acceleration = { 15.0f,0.0f,0.0f };
+	accelerationField.area.min = { -1.0f,-1.0f,-1.0f };
+	accelerationField.area.max = { 1.0f,1.0f,1.0f };
 }
 
 void Object3d::Update()
@@ -114,11 +118,12 @@ void Object3d::Update()
 		++numInstance;
 
 		// ===== 位置更新 =====
-		particleIterator->transform.translate.x += particleIterator->velocity.x * kDeltaTime;
+		// Fieldの範囲内のParticleには加速度を適用する
+		if (IsCollision(accelerationField.area, (*particleIterator).transform.translate)) {
+			(*particleIterator).velocity += accelerationField.acceleration * kDeltaTime;
+		}
 
-		particleIterator->transform.translate.y += particleIterator->velocity.y * kDeltaTime;
-
-		particleIterator->transform.translate.z += particleIterator->velocity.z * kDeltaTime;
+		particleIterator->transform.translate += particleIterator->velocity * kDeltaTime;
 
 		particleIterator->currentTime += kDeltaTime;
 
@@ -191,4 +196,13 @@ std::list<Object3d::Particle> Object3d::Emit(const Emitter &emitter, std::mt1993
 		particles.push_back(MakeNewParticle(randomEngine, emitter.transform.translate));
 	}
 	return particles;
+}
+
+bool Object3d::IsCollision(const AABB &aabb, const Vector3 &point)
+{
+	if (point.x < aabb.min.x || point.x > aabb.max.x) return false;
+	if (point.y < aabb.min.y || point.y > aabb.max.y) return false;
+	if (point.z < aabb.min.z || point.z > aabb.max.z) return false;
+
+	return true;
 }
