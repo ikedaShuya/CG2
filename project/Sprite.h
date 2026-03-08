@@ -115,7 +115,7 @@ private:
 	float rotation_ = 0.0f;
 	math::Vector2 size_ = { 128.0f,128.0f };
 	// テクスチャ番号
-	uint32_t srvIndex_y = 0;
+	uint32_t srvIndex_ = 0;
 	math::Vector2 anchorPoint = { 0.0f,0.0f };
 
 	// 左右フリップ
