@@ -3,6 +3,7 @@
 #include <list>
 #include <wrl.h>
 #include <d3d12.h>
+#include <unordered_map>
 #include "MathFunctions.h"
 
 class DirectXCommon;
@@ -19,6 +20,16 @@ public:
 	// 初期化
 	void Initialize(DirectXCommon *dxCommon, SrvManager *srvManager);
 
+	// 更新
+	void Update();
+
+	// 描画
+	void Draw();
+
+	void CreateParticleGroup(const std::string name, const std::string textureFilePath);
+
+	void Emit(const std::string name, const math::Vector3 &position, uint32_t count);
+
 private:
 
 	ParticleManager() = default;
@@ -32,10 +43,24 @@ private:
 	DirectXCommon *dxCommon_ = nullptr;
 	SrvManager *srvManager_ = nullptr;
 
+	// 頂点データ
+	struct VertexData
+	{
+		math::Vector4 position;
+		math::Vector2 texcoord;
+	};
+
 	struct MaterialData
 	{
 		std::string textureFilePath;
 		uint32_t textureIndex = 0;
+	};
+
+	// モデルデータ
+	struct ModelData
+	{
+		std::vector<VertexData> vertices;
+		MaterialData material;
 	};
 
 	struct Particle
@@ -63,4 +88,33 @@ private:
 		uint32_t numInstance = 0;
 		ParticleForGPU *instancingData = nullptr;
 	};
+
+	struct AccelerationField
+	{
+		math::Vector3 acceleration; //!< 加速度
+		math::AABB area; //!<　範囲
+	};
+
+	std::unordered_map<std::string, ParticleGroup> particleGroups;
+
+	bool IsCollision(const math::AABB &aabb, const math::Vector3 &point);
+
+	bool isBillboard = true;
+
+	// カメラのTransform
+	math::Transform cameraTransform;
+
+	AccelerationField accelerationField;
+
+	// 最大インスタンス数
+	static const uint32_t kNumMaxInstance = 1000;
+
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState = nullptr;
+
+	// 頂点バッファビュー
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView {};
+
+	ModelData modelData_;
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
 };

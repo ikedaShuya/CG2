@@ -25,6 +25,9 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(uint32_t index);
 
+	// SRV作成 (Structured Buffer用)
+	void CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource *pResource, UINT numElements, UINT structureByteStride);
+
 private:
 	DirectXCommon *directXCommon = nullptr;
 
@@ -38,6 +41,4 @@ private:
 
 	// SRV生成(テクスチャ用)
 	void CreateSRVforTexture2D(uint32_t srvIndex, ID3D12Resource *pResource, DXGI_FORMAT Format, UINT MipLevels);
-	// SRV#nt (Structured Buffer#)
-	void CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource *pResource, UINT numElements, UINT structureByteStride);
 };
