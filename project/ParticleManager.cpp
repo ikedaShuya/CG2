@@ -19,6 +19,10 @@ void ParticleManager::Initialize(DirectXCommon *dxCommon, SrvManager *srvManager
     accelerationField.acceleration = { 15.0f,0.0f,0.0f };
     accelerationField.area.min = { -1.0f,-1.0f,-1.0f };
     accelerationField.area.max = { 1.0f,1.0f,1.0f };
+
+    cameraTransform.translate = { 0.0f, 23.0f, 10.0f };
+    cameraTransform.rotate = { 0.5f, 3.14f, 0.0f };
+    cameraTransform.scale = { 1.0f,1.0f,1.0f };
 }
 
 void ParticleManager::Update() {
@@ -44,58 +48,68 @@ void ParticleManager::Update() {
         billboardMatrix.m[3][2] = 0.0f;
     }
 
-    for (auto &[name, particleGroup] : particleGroups) {
-
-        // インスタンス数リセット
+    for (auto& [name, particleGroup] : particleGroups)
+    {
         particleGroup.numInstance = 0;
 
-        for (std::list<Particle>::iterator particleIterator = particleGroup.particles.begin(); particleIterator != particleGroup.particles.end();) {
+        for (auto particleIterator = particleGroup.particles.begin();
+            particleIterator != particleGroup.particles.end();)
+        {
+            Particle& particle = *particleIterator;
 
             // 寿命チェック
-            if ((*particleIterator).lifeTime <= (*particleIterator).currentTime) {
-                particleIterator = particleGroup.particles.erase(particleIterator); // 生存期間過ぎたParticleはlistから消す。戻り値が次のイテレータとなる
+            if (particle.lifeTime <= particle.currentTime)
+            {
+                particleIterator = particleGroup.particles.erase(particleIterator);
                 continue;
             }
 
-            // ===== 位置更新 =====
-            // Fieldの範囲内のParticleには加速度を適用する
-            if (IsCollision(accelerationField.area, (*particleIterator).transform.translate)) {
-                (*particleIterator).velocity += accelerationField.acceleration * kDeltaTime;
+            // 加速度
+            if (IsCollision(accelerationField.area, particle.transform.translate))
+            {
+                particle.velocity += accelerationField.acceleration * kDeltaTime;
             }
 
-            particleIterator->transform.translate += particleIterator->velocity * kDeltaTime;
+            // 移動
+            particle.transform.translate += particle.velocity * kDeltaTime;
+            particle.currentTime += kDeltaTime;
 
-            particleIterator->currentTime += kDeltaTime;
+            // 最大数チェック
+            if (particleGroup.numInstance >= kNumMaxInstance)
+            {
+                ++particleIterator;
+                continue;
+            }
 
+            // ワールド行列
             Matrix4x4 worldMatrix;
 
-            if (isBillboard) {
-                Matrix4x4 scaleMatrix = MakeScaleMatrix(particleIterator->transform.scale);
-                Matrix4x4 translateMatrix = MakeTranslateMatrix(particleIterator->transform.translate);
+            if (isBillboard)
+            {
+                Matrix4x4 scaleMatrix = MakeScaleMatrix(particle.transform.scale);
+                Matrix4x4 translateMatrix = MakeTranslateMatrix(particle.transform.translate);
 
                 worldMatrix = Multiply(scaleMatrix, billboardMatrix);
                 worldMatrix = Multiply(worldMatrix, translateMatrix);
-
-            } else {
+            } else
+            {
                 worldMatrix = MakeAffineMatrix(
-                    particleIterator->transform.scale,
-                    particleIterator->transform.rotate,
-                    particleIterator->transform.translate
+                    particle.transform.scale,
+                    particle.transform.rotate,
+                    particle.transform.translate
                 );
             }
 
             Matrix4x4 worldViewMatrix = Multiply(worldMatrix, viewMatrix);
-            Matrix4x4 worldViewProjectionMatrix = Multiply(worldViewMatrix, projectionMatrix);
+            Matrix4x4 wvp = Multiply(worldViewMatrix, projectionMatrix);
 
-            if (particleGroup.numInstance >= kNumMaxInstance) {
-                break;
-            }
-
+            // GPU書き込み
             particleGroup.instancingData[particleGroup.numInstance].World = worldMatrix;
-            particleGroup.instancingData[particleGroup.numInstance].WVP = worldViewProjectionMatrix;
-            particleGroup.instancingData[particleGroup.numInstance].color = particleIterator->color;
+            particleGroup.instancingData[particleGroup.numInstance].WVP = wvp;
+            particleGroup.instancingData[particleGroup.numInstance].color = particle.color;
 
-            ++particleGroup.numInstance;
+            particleGroup.numInstance++;
+
             ++particleIterator;
         }
     }
@@ -165,6 +179,22 @@ void ParticleManager::CreateParticleGroup(const std::string name, const std::str
 
 void ParticleManager::Emit(const std::string name, const math::Vector3 &position, uint32_t count)
 {
+    assert(particleGroups.find(name) != particleGroups.end());
+
+    ParticleGroup& group = particleGroups[name];
+
+    for (uint32_t i = 0; i < count; i++) {
+
+        Particle particle {};
+
+        particle.transform.translate = position;   // 位置
+        particle.velocity = { 0.0f, 1.0f, 0.0f };    // 速度
+        particle.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 色
+        particle.lifeTime = 1.0f;                   // 寿命
+        particle.currentTime = 0.0f;                // 経過時間
+
+        group.particles.push_back(particle);
+    }
 }
 
 bool ParticleManager::IsCollision(const math::AABB &aabb, const math::Vector3 &point)
