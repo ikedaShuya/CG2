@@ -183,15 +183,41 @@ void ParticleManager::Emit(const std::string name, const math::Vector3 &position
 
     ParticleGroup& group = particleGroups[name];
 
-    for (uint32_t i = 0; i < count; i++) {
+    std::uniform_real_distribution<float> posRand(-0.5f, 0.5f);
+    std::uniform_real_distribution<float> velRand(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> colorRand(0.0f, 1.0f);
+    std::uniform_real_distribution<float> lifeRand(0.8f, 1.5f);
 
+    for (uint32_t i = 0; i < count; i++)
+    {
         Particle particle {};
 
-        particle.transform.translate = position;   // 位置
-        particle.velocity = { 0.0f, 1.0f, 0.0f };    // 速度
-        particle.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 色
-        particle.lifeTime = 1.0f;                   // 寿命
-        particle.currentTime = 0.0f;                // 経過時間
+        particle.transform.translate =
+        {
+            position.x + posRand(randomEngine),
+            position.y + posRand(randomEngine),
+            position.z + posRand(randomEngine)
+        };
+
+        particle.transform.scale = { 0.5f,0.5f,0.5f };
+
+        particle.velocity =
+        {
+            velRand(randomEngine),
+            velRand(randomEngine),
+            velRand(randomEngine)
+        };
+
+        particle.color =
+        {
+            colorRand(randomEngine),
+            colorRand(randomEngine),
+            colorRand(randomEngine),
+            1.0f
+        };
+
+        particle.lifeTime = lifeRand(randomEngine);
+        particle.currentTime = 0.0f;
 
         group.particles.push_back(particle);
     }

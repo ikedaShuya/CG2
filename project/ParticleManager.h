@@ -4,6 +4,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <unordered_map>
+#include <random>
 #include "MathFunctions.h"
 
 class DirectXCommon;
@@ -117,4 +118,7 @@ private:
 
 	ModelData modelData_;
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine { seedGenerator() };
 };
