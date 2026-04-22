@@ -278,7 +278,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ===== 3Dオブジェクト共通部 =====
 	Object3dCommon *object3dCommon = new Object3dCommon();
-	object3dCommon->Initialize(dxCommon);
+	object3dCommon->Initialize(dxCommon,srvManager);
 
 
 	// ===== モデル共通部 =====

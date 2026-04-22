@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <list>
+#include <random>
 #include <wrl.h>
 #include <d3d12.h>
 #include "MathFunctions.h"
@@ -15,7 +17,8 @@ class Object3d
 {
 public:
 
-	// 頂点データ
+	// ===== 既存 =====
+
 	struct VertexData
 	{
 		math::Vector4 position;
@@ -23,21 +26,18 @@ public:
 		math::Vector3 normal;
 	};
 
-	// マテリアル読み込み用
 	struct MaterialData
 	{
 		std::string textureFilePath;
 		uint32_t textureIndex = 0;
 	};
 
-	// モデルデータ
 	struct ModelData
 	{
 		std::vector<VertexData> vertices;
 		MaterialData material;
 	};
 
-	// GPU用マテリアル
 	struct Material
 	{
 		math::Vector4 color;
@@ -46,81 +46,185 @@ public:
 		math::Matrix4x4 uvTransform;
 	};
 
-	// 座標変換行列
 	struct TransformationMatrix
 	{
 		math::Matrix4x4 WVP;
 		math::Matrix4x4 World;
 	};
 
-	// 平行光源
 	struct DirectionalLight
 	{
-		math::Vector4 color;      // ライトの色
-		math::Vector3 direction;  // ライトの向き
-		float intensity;          // 輝度
+		math::Vector4 color;
+		math::Vector3 direction;
+		float intensity;
 	};
 
-public: // メンバ関数
+	struct Particle
+	{
+		math::Transform transform;
+		math::Vector3 velocity;
+		math::Vector4 color;
+		float lifeTime;
+		float currentTime;
+	};
 
-	// 初期化
-	void Initialize(Object3dCommon *object3dCommon);
+	struct ParticleForGPU
+	{
+		math::Matrix4x4 WVP;
+		math::Matrix4x4 World;
+		math::Vector4 color;
+	};
 
-	// 更新
+	struct Emitter
+	{
+		math::Transform transform;
+		uint32_t count;
+		float frequency;
+		float frequencyTime;
+	};
+
+	struct AccelerationField
+	{
+		math::Vector3 acceleration;
+		math::AABB area;
+	};
+
+public:
+
+	// ===== 基本処理 =====
+	void Initialize(Object3dCommon* object3dCommon);
 	void Update();
-
-	// 描画
 	void Draw();
 
-	// ===== リソース生成 =====
-	void CreateTransformationMatrixResource();
+	// ===== リソース =====
+	void CreateTransformationMatrixResource(); // ← 元のやつ残す
 	void CreateDirectionalLight();
+	void CreateInstancingBuffer();
 
-	// setter
-	void SetModel(Model *model) { this->model = model; }
+	// ===== setter =====
+	void SetModel(Model* model) {
+		this->model = model;
+	}
+	void SetModel(const std::string& filePath);
 
-	// setter
-	void SetScale(const math::Vector3 &scale) { transform.scale = scale; }
-	void SetRotate(const math::Vector3 &rotate) { transform.rotate = rotate; }
-	void SetTranslate(const math::Vector3 &translate) { transform.translate = translate; }
+	void SetScale(const math::Vector3& scale) {
+		transform.scale = scale;
+	}
+	void SetRotate(const math::Vector3& rotate) {
+		transform.rotate = rotate;
+	}
+	void SetTranslate(const math::Vector3& translate) {
+		transform.translate = translate;
+	}
 
-	// getter
-	const math::Vector3 &GetScale() const { return transform.scale; }
-	const math::Vector3 &GetRotate() const { return transform.rotate; }
-	const math::Vector3 &GetTranslate() const { return transform.translate; }
+	void SetCamera(Camera* camera) {
+		this->camera = camera;
+	}
 
-	void SetModel(const std::string &filePath);
+	// Particle用
+	void SetBillboard(bool flag) {
+		isBillboard = flag;
+	}
 
-	// setter 
-	void SetCamera(Camera *camera) { this->camera = camera; }
+	void SetCameraScale(const math::Vector3& scale) {
+		cameraTransform.scale = scale;
+	}
+	void SetCameraRotate(const math::Vector3& rotate) {
+		cameraTransform.rotate = rotate;
+	}
+	void SetCameraTranslate(const math::Vector3& translate) {
+		cameraTransform.translate = translate;
+	}
+
+	// Light
+	void SetLightDirection(const math::Vector3& dir) {
+		directionalLightData->direction = dir;
+	}
+	void SetLightIntensity(float intensity) {
+		directionalLightData->intensity = intensity;
+	}
+	void SetLightColor(const math::Vector4& color) {
+		directionalLightData->color = color;
+	}
+
+	// ===== getter =====
+	const math::Vector3& GetScale() const {
+		return transform.scale;
+	}
+	const math::Vector3& GetRotate() const {
+		return transform.rotate;
+	}
+	const math::Vector3& GetTranslate() const {
+		return transform.translate;
+	}
+
+	const math::Vector3& GetCameraScale() const {
+		return cameraTransform.scale;
+	}
+	const math::Vector3& GetCameraRotate() const {
+		return cameraTransform.rotate;
+	}
+	const math::Vector3& GetCameraTranslate() const {
+		return cameraTransform.translate;
+	}
+
+	const math::Vector3& GetLightDirection() const {
+		return directionalLightData->direction;
+	}
+	float GetLightIntensity() const {
+		return directionalLightData->intensity;
+	}
+	const math::Vector4& GetLightColor() const {
+		return directionalLightData->color;
+	}
+
+	uint32_t GetParticleCount() const {
+		return numInstance;
+	}
+	bool GetBillboard() const {
+		return isBillboard;
+	}
+
+	Emitter& GetEmitter() {
+		return emitter;
+	}
+
+	// ===== Particle処理 =====
+	Particle MakeNewParticle(std::mt19937& randomEngine, const math::Vector3& translate);
 
 private:
 
-	// ===== 共通オブジェクト =====
-	Object3dCommon *object3dCommon = nullptr;
+	// ===== 共通 =====
+	Object3dCommon* object3dCommon = nullptr;
 
-
-	// ===== 変換行列 =====
-	// 変換行列用バッファリソース
+	// ===== 行列 =====
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = nullptr;
-	// 変換行列データ書き込み用ポインタ
-	TransformationMatrix *transformationMatrixData = nullptr;
+	TransformationMatrix* transformationMatrixData = nullptr;
 
-
-	// ===== 平行光源 =====
-	// 平行光源用バッファリソース
+	// ===== ライト =====
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = nullptr;
-	// 平行光源データ書き込み用ポインタ
-	DirectionalLight *directionalLightData = nullptr;
-
+	DirectionalLight* directionalLightData = nullptr;
 
 	// ===== Transform =====
-	// オブジェクトのTransform
 	math::Transform transform;
-	// カメラのTransform
 	math::Transform cameraTransform;
 
-	Model *model = nullptr;
+	Model* model = nullptr;
+	Camera* camera = nullptr;
 
-	Camera *camera = nullptr;
+	// ===== Particle =====
+	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = nullptr;
+	ParticleForGPU* instancingData = nullptr;
+
+	std::list<Particle> particles;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU {};
+
+	uint32_t numInstance = 0;
+	const uint32_t kNumMaxInstance = 100;
+
+	bool isBillboard = true;
+
+	Emitter emitter {};
+	AccelerationField accelerationField;
 };
