@@ -52,8 +52,8 @@ void Object3d::Update()
 
 void Object3d::Draw()
 {
-	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-	object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	//object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(3, transformationMatrixResource->GetGPUVirtualAddress());
+	//object3dCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, directionalLightResource->GetGPUVirtualAddress());
 
 	// 3Dモデルが割り当てられていれば描画する
 	if (model) {

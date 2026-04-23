@@ -24,6 +24,8 @@
 #include "ModelManager.h"
 #include "Camera.h"
 #include "SrvManager.h"
+#include "ParticleManager.h"
+#include "ParticleEmitter.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -328,6 +330,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// デフォルトカメラとして設定
 	object3dCommon->SetDefaultCamera(camera);
 
+	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager,object3dCommon);
+	ParticleManager::GetInstance()->SetCamera(camera);
+
 	// ===== モデルのロード =====
 	ModelManager::GetInstance()->LoadModel("resources/models/plane/plane.obj");
 	ModelManager::GetInstance()->LoadModel("resources/models/bunny/bunny.obj");
@@ -372,6 +377,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// アンカーポイントは中央
 	uvCheckerSprite->SetAnchorPoint({ 0.5f, 0.5f });
+
+	ParticleManager::GetInstance()->CreateParticleGroup("fire", "resources/textures/uvChecker.png");
+
+	ParticleEmitter* emitter = new ParticleEmitter(
+		"fire",
+		{ 0.0f, 0.0f, 0.0f },
+		10,        // 出る数
+		0.1f       // 出る間隔
+	);
 
 #pragma endregion
 
@@ -445,6 +459,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 3Dオブジェクト更新
 		planeObject->Update();
 		bunnyObject->Update();
+
+		float deltaTime = 1.0f / 60.0f;
+
+		emitter->Update(deltaTime);
+		ParticleManager::GetInstance()->Update(deltaTime);
 
 		// スプライト更新
 		uvCheckerSprite->Update();
@@ -637,6 +656,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 3Dオブジェクト描画
 		planeObject->Draw();
 		bunnyObject->Draw();
+
+		ParticleManager::GetInstance()->Draw();
 
 		// スプライト描画
 		uvCheckerSprite->Draw();

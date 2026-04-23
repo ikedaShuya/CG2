@@ -3,6 +3,8 @@
 #include "DirectXCommon.h"
 #include "SrvManager.h"
 #include "WinApp.h"
+#include "Camera.h"
+#include "Object3dCommon.h"
 #include <cassert>
 
 using namespace math;
@@ -12,37 +14,38 @@ ParticleManager *ParticleManager::GetInstance() {
     return &instance;
 }
 
-void ParticleManager::Initialize(DirectXCommon *dxCommon, SrvManager *srvManager) {
+void ParticleManager::Initialize(DirectXCommon *dxCommon, SrvManager *srvManager, Object3dCommon* object3dCommon) {
 	dxCommon_ = dxCommon;
 	srvManager_ = srvManager;
+    object3dCommon_ = object3dCommon;
 
     accelerationField.acceleration = { 15.0f,0.0f,0.0f };
     accelerationField.area.min = { -1.0f,-1.0f,-1.0f };
     accelerationField.area.max = { 1.0f,1.0f,1.0f };
-
-    cameraTransform.translate = { 0.0f, 23.0f, 10.0f };
-    cameraTransform.rotate = { 0.5f, 3.14f, 0.0f };
-    cameraTransform.scale = { 1.0f,1.0f,1.0f };
 }
 
-void ParticleManager::Update() {
+void ParticleManager::Update(float deltaTime) {
 
-    const float kDeltaTime = 1.0f / 60.0f;
+    assert(camera_);
 
-    // カメラ行列作成
-    Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+    //const float kDeltaTime = 1.0f / 60.0f;
 
-    Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-
-    Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+    Matrix4x4 viewMatrix = camera_->GetViewMatrix();
+    Matrix4x4 projectionMatrix = camera_->GetProjectionMatrix();
 
     // ビルボード行列
     Matrix4x4 billboardMatrix = MakeIdentity4x4();
 
     if (isBillboard) {
-        billboardMatrix = Inverse(viewMatrix);
+        billboardMatrix = viewMatrix;
 
-        // 平行移動削除
+        // 回転だけにする
+        billboardMatrix.m[0][3] = 0.0f;
+        billboardMatrix.m[1][3] = 0.0f;
+        billboardMatrix.m[2][3] = 0.0f;
+
+        billboardMatrix = Inverse(billboardMatrix);
+
         billboardMatrix.m[3][0] = 0.0f;
         billboardMatrix.m[3][1] = 0.0f;
         billboardMatrix.m[3][2] = 0.0f;
@@ -67,12 +70,12 @@ void ParticleManager::Update() {
             // 加速度
             if (IsCollision(accelerationField.area, particle.transform.translate))
             {
-                particle.velocity += accelerationField.acceleration * kDeltaTime;
+                particle.velocity += accelerationField.acceleration * deltaTime;
             }
 
             // 移動
-            particle.transform.translate += particle.velocity * kDeltaTime;
-            particle.currentTime += kDeltaTime;
+            particle.transform.translate += particle.velocity * deltaTime;
+            particle.currentTime += deltaTime;
 
             // 最大数チェック
             if (particleGroup.numInstance >= kNumMaxInstance)
@@ -117,11 +120,15 @@ void ParticleManager::Update() {
 
 void ParticleManager::Draw() {
 
+    srvManager_->PreDraw();
+
     // ルートシグネチャを設定
-    dxCommon_->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
+    //dxCommon_->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
 
     // PSOを設定
-    dxCommon_->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
+    //dxCommon_->GetCommandList()->SetPipelineState(graphicsPipelineState.Get());
+
+    object3dCommon_->SetCommonRenderSetting();
 
     // プリミティブトポロジーを設定
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

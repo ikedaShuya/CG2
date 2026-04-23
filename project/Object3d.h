@@ -59,36 +59,6 @@ public:
 		float intensity;
 	};
 
-	struct Particle
-	{
-		math::Transform transform;
-		math::Vector3 velocity;
-		math::Vector4 color;
-		float lifeTime;
-		float currentTime;
-	};
-
-	struct ParticleForGPU
-	{
-		math::Matrix4x4 WVP;
-		math::Matrix4x4 World;
-		math::Vector4 color;
-	};
-
-	struct Emitter
-	{
-		math::Transform transform;
-		uint32_t count;
-		float frequency;
-		float frequencyTime;
-	};
-
-	struct AccelerationField
-	{
-		math::Vector3 acceleration;
-		math::AABB area;
-	};
-
 public:
 
 	// ===== 基本処理 =====
@@ -99,7 +69,6 @@ public:
 	// ===== リソース =====
 	void CreateTransformationMatrixResource(); // ← 元のやつ残す
 	void CreateDirectionalLight();
-	void CreateInstancingBuffer();
 
 	// ===== setter =====
 	void SetModel(Model* model) {
@@ -119,11 +88,6 @@ public:
 
 	void SetCamera(Camera* camera) {
 		this->camera = camera;
-	}
-
-	// Particle用
-	void SetBillboard(bool flag) {
-		isBillboard = flag;
 	}
 
 	void SetCameraScale(const math::Vector3& scale) {
@@ -178,20 +142,6 @@ public:
 		return directionalLightData->color;
 	}
 
-	uint32_t GetParticleCount() const {
-		return numInstance;
-	}
-	bool GetBillboard() const {
-		return isBillboard;
-	}
-
-	Emitter& GetEmitter() {
-		return emitter;
-	}
-
-	// ===== Particle処理 =====
-	Particle MakeNewParticle(std::mt19937& randomEngine, const math::Vector3& translate);
-
 private:
 
 	// ===== 共通 =====
@@ -211,20 +161,4 @@ private:
 
 	Model* model = nullptr;
 	Camera* camera = nullptr;
-
-	// ===== Particle =====
-	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = nullptr;
-	ParticleForGPU* instancingData = nullptr;
-
-	std::list<Particle> particles;
-
-	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU {};
-
-	uint32_t numInstance = 0;
-	const uint32_t kNumMaxInstance = 100;
-
-	bool isBillboard = true;
-
-	Emitter emitter {};
-	AccelerationField accelerationField;
 };

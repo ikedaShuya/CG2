@@ -9,6 +9,8 @@
 
 class DirectXCommon;
 class SrvManager;
+class Camera;
+class Object3dCommon;
 
 // パーティクルマネージャー
 class ParticleManager
@@ -19,10 +21,10 @@ public:
 	static ParticleManager *GetInstance();
 
 	// 初期化
-	void Initialize(DirectXCommon *dxCommon, SrvManager *srvManager);
+	void Initialize(DirectXCommon *dxCommon, SrvManager *srvManager, Object3dCommon* object3dCommon);
 
 	// 更新
-	void Update();
+	void Update(float deltaTime);
 
 	// 描画
 	void Draw();
@@ -30,6 +32,10 @@ public:
 	void CreateParticleGroup(const std::string name, const std::string textureFilePath);
 
 	void Emit(const std::string name, const math::Vector3 &position, uint32_t count);
+
+	void SetCamera(Camera* camera) {
+		this->camera_ = camera;
+	}
 
 private:
 
@@ -102,8 +108,8 @@ private:
 
 	bool isBillboard = true;
 
-	// カメラのTransform
-	math::Transform cameraTransform;
+	// カメラ
+	Camera* camera_ = nullptr;
 
 	AccelerationField accelerationField;
 
@@ -121,4 +127,6 @@ private:
 
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine { seedGenerator() };
+
+	Object3dCommon* object3dCommon_ = nullptr;
 };
