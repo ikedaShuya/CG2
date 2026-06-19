@@ -5,11 +5,11 @@
 
 using namespace StringUtility;
 
-TextureManager *TextureManager::instance = nullptr;
+TextureManager* TextureManager::instance = nullptr;
 // ImGuiで0番を使用するために、1番から使用
 uint32_t TextureManager::kSRVIndexTop = 1;
 
-TextureManager *TextureManager::GetInstance()
+TextureManager* TextureManager::GetInstance()
 {
 	if (instance == nullptr) {
 		instance = new TextureManager;
@@ -27,13 +27,13 @@ void TextureManager::Initialize() {
 	textureDatas.reserve(DirectXCommon::kMaxSRVCount);
 }
 
-void TextureManager::LoadTexture(const std::string &filePath) {
+void TextureManager::LoadTexture(const std::string& filePath) {
 
 	// 読み込み済みテクスチャを検索
 	auto it = std::find_if(
 		textureDatas.begin(),
 		textureDatas.end(),
-		[&](TextureData &textureData) { return textureData.filePath == filePath; }
+		[&](TextureData& textureData) { return textureData.filePath == filePath; }
 	);
 	if (it != textureDatas.end()) {
 		// 読み込み済みなら早期return
@@ -44,20 +44,38 @@ void TextureManager::LoadTexture(const std::string &filePath) {
 	assert(textureDatas.size() + kSRVIndexTop < dxCommon_->kMaxSRVCount);
 
 	// テクスチャファイルを読んでプログラムで扱えるようにする
-	DirectX::ScratchImage image {};
+	DirectX::ScratchImage image{};
 	std::wstring filePathW = ConvertString(filePath);
-	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	//HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	HRESULT hr;
+	if (filePathW.ends_with(L".dds")) {
+		hr = DirectX::LoadFromDDSFile(filePathW.c_str(), DirectX::DDS_FLAGS_NONE, nullptr, image);
+	}
+	else {
+		hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	}
 	assert(SUCCEEDED(hr));
 
 	// ミップマップの作成
-	DirectX::ScratchImage mipImages {};
-	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-	assert(SUCCEEDED(hr));
+	DirectX::ScratchImage mipImages{};
+	if (DirectX::IsCompressed(image.GetMetadata().format)) {
+		mipImages = std::move(image);
+	}
+	else {
+		hr = DirectX::GenerateMipMaps(
+			image.GetImages(),
+			image.GetImageCount(),
+			image.GetMetadata(),
+			DirectX::TEX_FILTER_SRGB,
+			0,
+			mipImages);
+		assert(SUCCEEDED(hr));
+	}
 
 	// テクスチャデータを追加
 	textureDatas.resize(textureDatas.size() + 1);
 	// 追加したテクスチャデータの参照を取得する
-	TextureData &textureData = textureDatas.back();
+	TextureData& textureData = textureDatas.back();
 
 	textureData.filePath = filePath;
 	textureData.metadata = mipImages.GetMetadata();
@@ -72,11 +90,19 @@ void TextureManager::LoadTexture(const std::string &filePath) {
 	textureData.srvHandleCPU = dxCommon_->GetSRVCPUDescriptorHandle(srvIndex);
 	textureData.srvHandleGPU = dxCommon_->GetSRVGPUDescriptorHandle(srvIndex);
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc {};
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 	srvDesc.Format = textureData.metadata.format;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = UINT(textureData.metadata.mipLevels);
+	if (textureData.metadata.IsCubemap()) {
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.TextureCube.MostDetailedMip = 0; // unionがTextureCubeになったが、内部パラメータの意味はTexture2dと変わらない
+		srvDesc.TextureCube.MipLevels = UINT_MAX;
+		srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	}
+	else {
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = UINT(textureData.metadata.mipLevels);
+	}
 	dxCommon_->GetDevice()->CreateShaderResourceView(textureData.resource.Get(), &srvDesc, textureData.srvHandleCPU);
 }
 
@@ -87,13 +113,13 @@ void TextureManager::ReleaseIntermediateResources()
 	}
 }
 
-uint32_t TextureManager::GetTextureIndexByFilePath(const std::string &filePath)
+uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath)
 {
 	// 読み込む済みテクスチャデータを検索
 	auto it = std::find_if(
 		textureDatas.begin(),
 		textureDatas.end(),
-		[&](TextureData &textureData) { return textureData.filePath == filePath; }
+		[&](TextureData& textureData) { return textureData.filePath == filePath; }
 	);
 	if (it != textureDatas.end()) {
 		// 読み込み済みなら要素番号を返す
@@ -110,19 +136,19 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureInde
 	// 範囲外指定違反チェック
 	assert(textureIndex < textureDatas.size());
 
-	TextureData &textureData = textureDatas[textureIndex];
+	TextureData& textureData = textureDatas[textureIndex];
 	return textureData.srvHandleGPU;
 }
 
-void TextureManager::SetDirectXCommon(DirectXCommon *dxCommon) {
+void TextureManager::SetDirectXCommon(DirectXCommon* dxCommon) {
 	dxCommon_ = dxCommon;
 }
 
-const DirectX::TexMetadata &TextureManager::GetMetaData(uint32_t textureIndex)
+const DirectX::TexMetadata& TextureManager::GetMetaData(uint32_t textureIndex)
 {
 	// 範囲外指定違反チェック
 	assert(textureIndex < textureDatas.size());
 
-	TextureData &textureData = textureDatas[textureIndex];
+	TextureData& textureData = textureDatas[textureIndex];
 	return textureData.metadata;
 }
