@@ -3,6 +3,8 @@
 #include <vector>
 #include <wrl.h>
 #include <d3d12.h>
+#include <random>
+#include <list>
 #include "MathFunctions.h"
 
 class Object3dCommon;
@@ -14,7 +16,7 @@ class Object3d
 {
 public:
 
-	// 頂点データa
+	// 頂点データ
 	struct VertexData
 	{
 		math::Vector4 position;
@@ -60,6 +62,36 @@ public:
 		float intensity;          // 輝度
 	};
 
+	struct Particle
+	{
+		math::Transform transform;
+		math::Vector3 velocity;
+		math::Vector4 color;
+		float lifeTime;
+		float currentTime;
+	};
+
+	struct ParticleForGPU
+	{
+		math::Matrix4x4 WVP;
+		math::Matrix4x4 World;
+		math::Vector4 color;
+	};
+
+	struct Emitter
+	{
+		math::Transform transform; //!< エミッタのTransform
+		uint32_t count; //!< 発生数
+		float frequency; //!< 発生頻度
+		float frequencyTime; //!< 頻度用時刻
+	};
+
+	struct AccelerationField
+	{
+		math::Vector3 acceleration; //!< 加速度
+		math::AABB area; //!<　範囲
+	};
+
 public: // メンバ関数
 
 	// 初期化
@@ -72,8 +104,8 @@ public: // メンバ関数
 	void Draw();
 
 	// ===== リソース生成 =====
-	void CreateTransformationMatrixResource();
 	void CreateDirectionalLight();
+	void CreateInstancingBuffer();
 
 	// setter
 	void SetModel(Model *model) { this->model = model; }
@@ -99,17 +131,32 @@ public: // メンバ関数
 
 	void SetModel(const std::string &filePath);
 
+	Particle MakeNewParticle(std::mt19937 &randomEngine, const math::Vector3 &translate);
+
+	//Particle *GetParticles() { return particles; }
+	uint32_t GetParticleCount() const { return numInstance; }
+
+	void SetBillboard(bool flag) { isBillboard = flag; }
+	bool GetBillboard() const { return isBillboard; }
+
+	void SetCameraScale(const math::Vector3 &scale) { cameraTransform.scale = scale; }
+	void SetCameraRotate(const math::Vector3 &rotate) { cameraTransform.rotate = rotate; }
+	void SetCameraTranslate(const math::Vector3 &translate) { cameraTransform.translate = translate; }
+
+	const math::Vector3 &GetCameraScale() const { return cameraTransform.scale; }
+	const math::Vector3 &GetCameraRotate() const { return cameraTransform.rotate; }
+	const math::Vector3 &GetCameraTranslate() const { return cameraTransform.translate; }
+
+	std::list<Particle> Emit(const Emitter &emitter, std::mt19937 &randomEngine);
+
+	Emitter &GetEmitter() { return emitter; }
+
+	bool IsCollision(const math::AABB &aabb, const math::Vector3 &point);
+
 private:
 
 	// ===== 共通オブジェクト =====
 	Object3dCommon *object3dCommon = nullptr;
-
-
-	// ===== 変換行列 =====
-	// 変換行列用バッファリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource = nullptr;
-	// 変換行列データ書き込み用ポインタ
-	TransformationMatrix *transformationMatrixData = nullptr;
 
 
 	// ===== 平行光源 =====
@@ -126,4 +173,21 @@ private:
 	math::Transform cameraTransform;
 
 	Model *model = nullptr;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = nullptr;
+	ParticleForGPU *instancingData = nullptr;
+
+	std::list<Particle> particles;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+
+	uint32_t numInstance = 0;
+
+	bool isBillboard = true;
+
+	Emitter emitter {};
+
+	const uint32_t kNumMaxInstance = 100;
+
+	AccelerationField accelerationField;
 };
