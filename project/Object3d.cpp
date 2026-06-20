@@ -37,7 +37,7 @@ void Object3d::Initialize(Object3dCommon *object3dCommon)
 	emitter.transform.translate = { 0.0f,0.0f,0.0f };
 	emitter.transform.rotate = { 0.0f,0.0f,0.0f };
 	emitter.transform.scale = { 1.0f,1.0f,1.0f };
-	emitter.count = 40;
+	emitter.count = 8;
 	emitter.frequency = 0.5f; // 0.5秒ごとに発生
 	emitter.frequencyTime = 0.0f; // 発生頻度用の時刻、0で初期化
 
@@ -91,15 +91,18 @@ void Object3d::Update()
 
 		// ===== ビルボード =====
 		if (isBillboard) {
-			Matrix4x4 scaleMatrix = MakeScaleMatrix(particleIterator->transform.scale);
+			Matrix4x4 scaleMatrix =
+				MakeScaleMatrix(particleIterator->transform.scale);
 
-			Matrix4x4 translateMatrix = MakeTranslateMatrix(particleIterator->transform.translate);
+			Matrix4x4 rotateMatrix =
+				MakeRotateZMatrix(particleIterator->transform.rotate.z);
 
-			worldMatrix = Multiply(scaleMatrix, billboardMatrix);
+			Matrix4x4 translateMatrix =
+				MakeTranslateMatrix(particleIterator->transform.translate);
+
+			worldMatrix = Multiply(scaleMatrix, rotateMatrix);
+			worldMatrix = Multiply(worldMatrix, billboardMatrix);
 			worldMatrix = Multiply(worldMatrix, translateMatrix);
-
-		} else {
-			worldMatrix = MakeAffineMatrix(particleIterator->transform.scale, particleIterator->transform.rotate, particleIterator->transform.translate);
 		}
 
 		// ===== WVP計算 =====
@@ -119,9 +122,9 @@ void Object3d::Update()
 
 		// ===== 位置更新 =====
 		// Fieldの範囲内のParticleには加速度を適用する
-		if (IsCollision(accelerationField.area, (*particleIterator).transform.translate)) {
-			(*particleIterator).velocity += accelerationField.acceleration * kDeltaTime;
-		}
+		//if (IsCollision(accelerationField.area, (*particleIterator).transform.translate)) {
+		//	(*particleIterator).velocity += accelerationField.acceleration * kDeltaTime;
+		//}
 
 		particleIterator->transform.translate += particleIterator->velocity * kDeltaTime;
 
@@ -173,16 +176,18 @@ void Object3d::SetModel(const std::string &filePath)
 
 Object3d::Particle Object3d::MakeNewParticle(std::mt19937 &randomEngine, const math::Vector3 &translate)
 {
-	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+	std::uniform_real_distribution<float> distribution(0.0f, 0.0f);
 	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
 	std::uniform_real_distribution<float> distTime(1.0f, 1.5f);
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
 	Particle particle {};
-	particle.transform.scale = { 1.0f,1.0f,1.0f };
-	particle.transform.rotate = { 0.0f,0.0f,0.0f };
-	particle.transform.translate = { emitter.transform.translate.x + distribution(randomEngine),emitter.transform.translate.y + distribution(randomEngine),emitter.transform.translate.z + distribution(randomEngine) };
-	particle.velocity = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
-	particle.color = { distColor(randomEngine),distColor(randomEngine) ,distColor(randomEngine) ,1.0f };
-	particle.lifeTime = distTime(randomEngine);
+	particle.transform.scale = { 0.05f,distScale(randomEngine),1.0f};
+	particle.transform.rotate = { 0.0f,0.0f,distRotate(randomEngine)};
+	particle.transform.translate = emitter.transform.translate;
+	particle.velocity = { distribution(randomEngine) * 3.0f,distribution(randomEngine) * 3.0f,0.0f };
+	particle.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	particle.lifeTime = 1.0f;
 	particle.currentTime = 0;
 	Vector3 randomTranslate { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
 	particle.transform.translate = translate + randomTranslate;
