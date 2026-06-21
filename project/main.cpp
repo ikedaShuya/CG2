@@ -578,7 +578,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		spriteCommon->SetupCommonDrawing();
 
 		// スプライト描画
-		uvCheckerSprite->Draw();
+		//uvCheckerSprite->Draw();
 
 	#ifdef USE_IMGUI
 		// ImGui描画コマンドを積む
