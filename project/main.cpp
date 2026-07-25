@@ -22,6 +22,8 @@
 #include "Model.h"
 #include "ModelCommon.h"
 #include "ModelManager.h"
+#include "Skybox.h"
+#include "SkyboxCommon.h"
 
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
@@ -354,6 +356,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// アンカーポイントは中央
 	uvCheckerSprite->SetAnchorPoint({ 0.5f, 0.5f });
 
+	// 初期化
+	SkyboxCommon* skyboxCommon = new SkyboxCommon;
+	skyboxCommon->Initialize(dxCommon);
+
+	Skybox* skybox = new Skybox;
+	skybox->Initialize(skyboxCommon);
+
+	// Cubemapを設定
+	skybox->SetTexture("resources/rostock_laage_airport_4k.dds");
+
 #pragma endregion
 
 	D3DResourceLeakChecker leakCheck;
@@ -431,10 +443,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// スプライト更新
 		uvCheckerSprite->Update();
 
+		skybox->Update();
+
 	#pragma endregion
 
 	#ifdef USE_IMGUI
-	#pragma region ImGui操作UI
+#pragma region ImGui操作UI
 
 		// フレーム開始
 		ImGui_ImplDX12_NewFrame();
@@ -443,220 +457,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::Begin("Control Panel");
 
-		//if (ImGui::CollapsingHeader("Plane Object"))
-		//{
-		//	// 位置
-		//	math::Vector3 translate = planeObject->GetTranslate();
-		//	if (ImGui::DragFloat3("Translate##Plane", &translate.x, 0.1f))
-		//	{
-		//		planeObject->SetTranslate(translate);
-		//	}
-
-		//	// 回転
-		//	math::Vector3 rotate = planeObject->GetRotate();
-		//	if (ImGui::DragFloat3("Rotate##Plane", &rotate.x, 1.0f))
-		//	{
-		//		planeObject->SetRotate(rotate);
-		//	}
-
-		//	// スケール
-		//	math::Vector3 scale = planeObject->GetScale();
-		//	if (ImGui::DragFloat3("Scale##Plane", &scale.x, 0.01f, 0.01f, 10.0f))
-		//	{
-		//		planeObject->SetScale(scale);
-		//	}
-
-		//	// ライト情報表示・編集
-		//	if (ImGui::TreeNode("Directional Light"))
-		//	{
-		//		math::Vector3 dir = planeObject->GetLightDirection();
-		//		if (ImGui::DragFloat3("Direction##PlaneLight", &dir.x, 0.01f, -1.0f, 1.0f))
-		//		{
-		//			planeObject->SetLightDirection(dir);
-		//		}
-
-		//		float intensity = planeObject->GetLightIntensity();
-		//		if (ImGui::DragFloat("Intensity##PlaneLight", &intensity, 0.01f, 0.0f, 10.0f))
-		//		{
-		//			planeObject->SetLightIntensity(intensity);
-		//		}
-
-		//		math::Vector4 color = planeObject->GetLightColor();
-		//		float color_f[4] = { color.x, color.y, color.z, color.w };
-		//		if (ImGui::ColorEdit4("Color##PlaneLight", color_f))
-		//		{
-		//			planeObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-		//		}
-
-		//		ImGui::TreePop();
-		//	}
-		//}
-
-		//if (ImGui::CollapsingHeader("Bunny Object"))
-		//{
-		//	// 位置
-		//	math::Vector3 translate = bunnyObject->GetTranslate();
-		//	if (ImGui::DragFloat3("Translate##Bunny", &translate.x, 0.1f))
-		//	{
-		//		bunnyObject->SetTranslate(translate);
-		//	}
-
-		//	// 回転
-		//	math::Vector3 rotate = bunnyObject->GetRotate();
-		//	if (ImGui::DragFloat3("Rotate##Bunny", &rotate.x, 1.0f))
-		//	{
-		//		bunnyObject->SetRotate(rotate);
-		//	}
-
-		//	// スケール
-		//	math::Vector3 scale = bunnyObject->GetScale();
-		//	if (ImGui::DragFloat3("Scale##Bunny", &scale.x, 0.01f, 0.01f, 10.0f))
-		//	{
-		//		bunnyObject->SetScale(scale);
-		//	}
-
-		//	// ライト情報表示・編集
-		//	if (ImGui::TreeNode("Directional Light"))
-		//	{
-		//		math::Vector3 dir = bunnyObject->GetLightDirection();
-		//		if (ImGui::DragFloat3("Direction##BunnyLight", &dir.x, 0.01f, -1.0f, 1.0f))
-		//		{
-		//			bunnyObject->SetLightDirection(dir);
-		//		}
-
-		//		float intensity = bunnyObject->GetLightIntensity();
-		//		if (ImGui::DragFloat("Intensity##BunnyLight", &intensity, 0.01f, 0.0f, 10.0f))
-		//		{
-		//			bunnyObject->SetLightIntensity(intensity);
-		//		}
-
-		//		math::Vector4 color = bunnyObject->GetLightColor();
-		//		float color_f[4] = { color.x, color.y, color.z, color.w };
-		//		if (ImGui::ColorEdit4("Color##BunnyLight", color_f))
-		//		{
-		//			bunnyObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-		//		}
-
-		//		ImGui::TreePop();
-		//	}
-		//}
-
-		if (ImGui::CollapsingHeader("fence Object"))
+		if (ImGui::CollapsingHeader("Skybox"))
 		{
-			// 位置
-			math::Vector3 translate = fenceObject->GetTranslate();
-			if (ImGui::DragFloat3("Translate##fence", &translate.x, 0.1f))
+			// ========================================
+			// カメラ回転
+			// ========================================
+			math::Vector3 rotate = skybox->GetCameraRotate();
+
+			if (ImGui::DragFloat3(
+				"Camera Rotate##Skybox",
+				&rotate.x,
+				0.01f))
 			{
-				fenceObject->SetTranslate(translate);
+				skybox->SetCameraRotate(rotate);
 			}
 
-			// 回転
-			math::Vector3 rotate = fenceObject->GetRotate();
-			if (ImGui::DragFloat3("Rotate##fence", &rotate.x, 1.0f))
+			// ========================================
+			// カメラ位置
+			// ========================================
+			math::Vector3 translate = skybox->GetCameraTranslate();
+
+			if (ImGui::DragFloat3(
+				"Camera Position##Skybox",
+				&translate.x,
+				0.1f))
 			{
-				fenceObject->SetRotate(rotate);
+				skybox->SetCameraTranslate(translate);
 			}
 
-			// スケール
-			math::Vector3 scale = fenceObject->GetScale();
-			if (ImGui::DragFloat3("Scale##fence", &scale.x, 0.01f, 0.01f, 10.0f))
+			// ========================================
+			// 初期状態に戻す
+			// ========================================
+			if (ImGui::Button("Reset Skybox Camera"))
 			{
-				fenceObject->SetScale(scale);
-			}
+				skybox->SetCameraRotate(
+					{ 0.3f, 0.0f, 0.0f }
+				);
 
-			// ライト情報表示・編集
-			if (ImGui::TreeNode("Directional Light"))
-			{
-				math::Vector3 dir = fenceObject->GetLightDirection();
-				if (ImGui::DragFloat3("Direction##fenceLight", &dir.x, 0.01f, -1.0f, 1.0f))
-				{
-					fenceObject->SetLightDirection(dir);
-				}
-
-				float intensity = fenceObject->GetLightIntensity();
-				if (ImGui::DragFloat("Intensity##fenceLight", &intensity, 0.01f, 0.0f, 10.0f))
-				{
-					fenceObject->SetLightIntensity(intensity);
-				}
-
-				math::Vector4 color = fenceObject->GetLightColor();
-				float color_f[4] = { color.x, color.y, color.z, color.w };
-				if (ImGui::ColorEdit4("Color##fenceLight", color_f))
-				{
-					fenceObject->SetLightColor({ color_f[0], color_f[1], color_f[2], color_f[3] });
-				}
-
-				ImGui::TreePop();
-			}
-		}
-
-		if (ImGui::CollapsingHeader("UV Checker Sprite"))
-		{
-			// スプライトの位置（2D）
-			math::Vector2 pos = uvCheckerSprite->GetPosition();
-			float posArray[2] = { pos.x, pos.y };
-			if (ImGui::DragFloat2("Position", posArray, 1.0f))
-			{
-				uvCheckerSprite->SetPosition({ posArray[0], posArray[1] });
-			}
-
-			// 回転（float）
-			float rotation = uvCheckerSprite->GetRotation();
-			if (ImGui::DragFloat("Rotation", &rotation, 1.0f))
-			{
-				uvCheckerSprite->SetRotation(rotation);
-			}
-
-			// サイズ
-			math::Vector2 size = uvCheckerSprite->GetSize();
-			float sizeArray[2] = { size.x, size.y };
-			if (ImGui::DragFloat2("Size", sizeArray, 1.0f, 1.0f, 2048.0f))
-			{
-				uvCheckerSprite->SetSize({ sizeArray[0], sizeArray[1] });
-			}
-
-			// アンカーポイント
-			math::Vector2 anchor = uvCheckerSprite->GetAnchoPoint();
-			float anchorArray[2] = { anchor.x, anchor.y };
-			if (ImGui::DragFloat2("AnchorPoint", anchorArray, 0.01f, 0.0f, 1.0f))
-			{
-				uvCheckerSprite->SetAnchorPoint({ anchorArray[0], anchorArray[1] });
-			}
-
-			// 色 (Vector4)
-			math::Vector4 color = uvCheckerSprite->GetColor();
-			float colorArray[4] = { color.x, color.y, color.z, color.w };
-			if (ImGui::ColorEdit4("Color", colorArray))
-			{
-				uvCheckerSprite->SetColor({ colorArray[0], colorArray[1], colorArray[2], colorArray[3] });
-			}
-
-			// テクスチャの反転設定
-			bool flipX = uvCheckerSprite->GetIsFlipX();
-			if (ImGui::Checkbox("Flip X", &flipX))
-			{
-				uvCheckerSprite->SetIsFlipX(flipX);
-			}
-
-			bool flipY = uvCheckerSprite->GetIsFlipY();
-			if (ImGui::Checkbox("Flip Y", &flipY))
-			{
-				uvCheckerSprite->SetIsFlipY(flipY);
-			}
-
-			// テクスチャの使用領域
-			math::Vector2 texLeftTop = uvCheckerSprite->GetTextureLeftTop();
-			float texLeftTopArr[2] = { texLeftTop.x, texLeftTop.y };
-			if (ImGui::DragFloat2("Texture LeftTop", texLeftTopArr, 1.0f, 0.0f, 2048.0f))
-			{
-				uvCheckerSprite->SetTextureLeftTop({ texLeftTopArr[0], texLeftTopArr[1] });
-			}
-
-			math::Vector2 texSize = uvCheckerSprite->GetTextureSize();
-			float texSizeArr[2] = { texSize.x, texSize.y };
-			if (ImGui::DragFloat2("Texture Size", texSizeArr, 1.0f, 1.0f, 2048.0f))
-			{
-				uvCheckerSprite->SetTextureSize({ texSizeArr[0], texSizeArr[1] });
+				skybox->SetCameraTranslate(
+					{ 0.0f, 4.0f, -10.0f }
+				);
 			}
 		}
 
@@ -665,13 +505,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// ImGui描画コマンド生成
 		ImGui::Render();
 
-	#pragma endregion
+#pragma endregion
 	#endif
 
 	#pragma region 描画処理
 
 		// DirectX描画準備
 		dxCommon->PreDraw();
+
+		skybox->Draw();
 
 		// 3Dオブジェクト描画準備
 		object3dCommon->SetCommonRenderSetting();
@@ -708,6 +550,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 3Dオブジェクト解放
 	delete fenceObject;
 	fenceObject = nullptr;
+
+	delete skybox;
+	delete skyboxCommon;
 
 	/*delete bunnyObject;
 	bunnyObject = nullptr;
