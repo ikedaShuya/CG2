@@ -559,7 +559,12 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
 		//Log(os, shaderError->GetStringPointer());
 		// 警告・エラーダメゼッタイ
-		assert(false);
+		if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
+			OutputDebugStringA("===== Shader Compile Error =====\n");
+			OutputDebugStringA(shaderError->GetStringPointer());
+			OutputDebugStringA("================================\n");
+			assert(false);
+		}
 	}
 
 	//----Compile結果を受け取って返す----

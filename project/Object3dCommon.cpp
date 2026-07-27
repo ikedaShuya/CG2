@@ -32,33 +32,78 @@ void Object3dCommon::CreateRootSignature(){
 	descriptionRootSignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	//----DescriptorRange----
-	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-	descriptorRange[0].BaseShaderRegister = 0; // 0から始まる
-	descriptorRange[0].NumDescriptors = 1; // 数は1つ
-	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // SRVを使う
-	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // Offsetを自動計算
+	// ===== DescriptorRange =====
+	D3D12_DESCRIPTOR_RANGE descriptorRange[2] = {};
+
+	// t0 : 通常のモデルテクスチャ
+	descriptorRange[0].BaseShaderRegister = 0;
+	descriptorRange[0].NumDescriptors = 1;
+	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange[0].OffsetInDescriptorsFromTableStart =
+		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	// t1 : 環境マップCubemap
+	descriptorRange[1].BaseShaderRegister = 1;
+	descriptorRange[1].NumDescriptors = 1;
+	descriptorRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange[1].OffsetInDescriptorsFromTableStart =
+		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//----RootParameter----
 
 	// RootParameter作成。PixelShaderのMaterialとVertexShaderのTransform
-	D3D12_ROOT_PARAMETER rootParameters[4] = {};
+	D3D12_ROOT_PARAMETER rootParameters[6] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
 	rootParameters[0].Descriptor.ShaderRegister = 0; // レジスタ番号0とバインド
+	rootParameters[0].Descriptor.RegisterSpace = 0;
 
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // VertexShaderで使う
 	rootParameters[1].Descriptor.ShaderRegister = 0; // レジスタ番号0を使う
+	rootParameters[1].Descriptor.RegisterSpace = 0;
 
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // DescriptorTableを使う
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
-	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
-	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange); // Tableで利用する数
+	// ===== RootParameter[2] =====
+// PixelShader : 通常のモデルテクスチャ t0
+	rootParameters[2].ParameterType =
+		D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+
+	rootParameters[2].ShaderVisibility =
+		D3D12_SHADER_VISIBILITY_PIXEL;
+
+	rootParameters[2].DescriptorTable.pDescriptorRanges =
+		&descriptorRange[0];
+
+	rootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
 
 	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
 	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
 	rootParameters[3].Descriptor.ShaderRegister = 1; // レジスタ番号1を使う
+	rootParameters[3].Descriptor.RegisterSpace = 0;
+
+	// ===== RootParameter[4] =====
+// PixelShader : 環境マップCubemap t1
+	rootParameters[4].ParameterType =
+		D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+
+	rootParameters[4].ShaderVisibility =
+		D3D12_SHADER_VISIBILITY_PIXEL;
+
+	rootParameters[4].DescriptorTable.pDescriptorRanges =
+		&descriptorRange[1];
+
+	rootParameters[4].DescriptorTable.NumDescriptorRanges = 1;
+
+	// ===== RootParameter[5] =====
+// PixelShader : Camera b2
+	rootParameters[5].ParameterType =
+		D3D12_ROOT_PARAMETER_TYPE_CBV;
+
+	rootParameters[5].ShaderVisibility =
+		D3D12_SHADER_VISIBILITY_PIXEL;
+
+	rootParameters[5].Descriptor.ShaderRegister = 2;
+	rootParameters[5].Descriptor.RegisterSpace = 0;
 
 	descriptionRootSignature.pParameters = rootParameters; // ルートパラメータ配列へのポインタ
 	descriptionRootSignature.NumParameters = _countof(rootParameters); // 配列の長さ
