@@ -99,6 +99,7 @@ public: // メンバ関数
 
 	void SetModel(const std::string &filePath);
 
+
 private:
 
 	// ===== 共通オブジェクト =====
