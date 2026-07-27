@@ -60,6 +60,12 @@ public:
 		float intensity;          // 輝度
 	};
 
+	struct Camera
+	{
+		math::Vector3 worldPosition;
+		float padding;
+	};
+
 public: // メンバ関数
 
 	// 初期化
@@ -99,6 +105,10 @@ public: // メンバ関数
 
 	void SetModel(const std::string &filePath);
 
+	// 環境マップ設定
+	void SetEnvironmentTexture(const std::string& filePath);
+
+	void CreateCamera();
 
 private:
 
@@ -127,4 +137,9 @@ private:
 	math::Transform cameraTransform;
 
 	Model *model = nullptr;
+
+	uint32_t environmentTextureIndex = 0;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource;
+	Camera* cameraData = nullptr;
 };

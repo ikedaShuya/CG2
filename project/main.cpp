@@ -305,7 +305,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ===== モデルのロード =====
 	// ModelManager::GetInstance()->LoadModel("resources/models/fence/plane.obj"); 
 	// ModelManager::GetInstance()->LoadModel("resources/models/bunny/bunny.obj");
-	ModelManager::GetInstance()->LoadModel("resources/models/fence/fence.obj");
+	ModelManager::GetInstance()->LoadModel("resources/models/teapot/teapot.obj");
 
 	// ===== Object3d インスタンス生成・初期化 =====
 	// Object3d *planeObject = new Object3d();
@@ -319,7 +319,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ===== モデル設定 =====
 	// planeObject->SetModel("resources/models/plane/plane.obj");
 	// bunnyObject->SetModel("resources/models/bunny/bunny.obj");
-	fenceObject->SetModel("resources/models/fence/fence.obj");
+	fenceObject->SetModel("resources/models/teapot/teapot.obj");
+	fenceObject->SetEnvironmentTexture(
+		"resources/rostock_laage_airport_4k.dds"
+	);
 
 	// ===== Transform設定 =====
 	//// planeObject
@@ -527,7 +530,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		spriteCommon->SetupCommonDrawing();
 
 		// スプライト描画
-		uvCheckerSprite->Draw();
+		//uvCheckerSprite->Draw();
 
 	#ifdef USE_IMGUI
 		// ImGui描画コマンドを積む
